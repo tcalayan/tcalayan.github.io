@@ -13,6 +13,11 @@
  *   Project → About:    penguin lassos the project and pulls it down to reveal About (penguin.js).
  *   Opening a project link directly: the project just fades in (no pill).
  *
+ * Projects are ALWAYS shown light: some reports have their own night mode (prefers-color-scheme: dark),
+ * which turned them dark on phones in dark mode (e.g. Messenger) and broke the dark → white transitions.
+ * forceLight() removes those night-mode styles from the project page as it loads (the project files and
+ * the originals stay untouched — opened on their own they still have night mode).
+ *
  * There are TWO project views (A and B) so one project can slide in over the other.
  */
 (function () {
@@ -126,6 +131,26 @@
     return animate(stage, [{ opacity: 0 }, { opacity: 1 }], { duration: TIME.fadeOut, easing: "ease-in" });
   }
 
+  // ===== Projects always light =====
+  // Delete every "@media (prefers-color-scheme: dark)" block in the project page's styles
+  function forceLight(frame) {
+    let doc;
+    try { doc = frame.contentDocument; } catch (e) { return; }
+    if (!doc) return;
+    doc.documentElement.style.colorScheme = "light";       // light scrollbars / form controls too
+    const strip = (rules) => {
+      for (let i = rules.length - 1; i >= 0; i--) {
+        const r = rules[i];
+        if (r.media && /prefers-color-scheme\s*:\s*dark/i.test(r.media.mediaText)) r.parentRule
+          ? r.parentRule.deleteRule(i) : r.parentStyleSheet.deleteRule(i);
+        else if (r.cssRules) strip(r.cssRules);                // look inside other @media / @supports blocks
+      }
+    };
+    for (const sheet of doc.styleSheets) {
+      try { strip(sheet.cssRules); } catch (e) { /* a style file from another site can't be read — skip */ }
+    }
+  }
+
   // ===== Showing / hiding the project iframes =====
   // Load a project into a view (skipped if it's already there). Returns when loaded.
   function loadProject(v, p) {
@@ -135,7 +160,7 @@
       v.el.querySelector(".project-path").textContent = `/projects/${p.slug}`;
       if (window.TLDR) window.TLDR.fill(v.el, p);      // the TL;DR summary for this project
       v.loaded = new Promise((resolve) => {
-        v.frame.addEventListener("load", resolve, { once: true });
+        v.frame.addEventListener("load", () => { forceLight(v.frame); resolve(); }, { once: true });
         setTimeout(resolve, 4000);             // don't wait forever on a slow load
       });
       v.frame.src = p.path;

@@ -8,7 +8,7 @@
  *        It only pretends to click: the summary panel is NOT opened.
  * Rules: only ONCE per visit (sessionStorage), and never again once the visitor has clicked
  *        TL;DR themselves (localStorage). Any click / tap / key / scroll / sidebar / page change
- *        stops it at once. The hint layer has pointer-events: none, so it never blocks clicks.
+ *        stops it at once — also when it happens INSIDE the project page (the iframe), e.g. scrolling it. The hint layer has pointer-events: none, so it never blocks clicks.
  * Styles: css/style.css (search "TL;DR hint").
  */
 (function () {
@@ -90,6 +90,8 @@
   let startTimer = null;
 
   const STOP_EVENTS = ["pointerdown", "keydown", "wheel", "touchstart", "scroll", "resize", "blur", "hashchange", "sidebar:open"];
+  // the same, but inside the project page (scrolling there doesn't reach this page's listeners)
+  const FRAME_STOP_EVENTS = ["pointerdown", "keydown", "wheel", "touchstart", "scroll"];
 
   // Any of these stops the hint. ("blur" = the page lost focus, e.g. a click inside the project's
   // iframe; focus moving between buttons on this page also sends "blur", so that one is ignored.)
@@ -105,8 +107,9 @@
     running.timers.forEach(clearTimeout);
     running.layer.remove();
     running.btn.classList.remove("is-hint-pressed", "is-hint-pulse");
-    running = null;
     STOP_EVENTS.forEach((type) => window.removeEventListener(type, onStopEvent, true));
+    if (running.frameWin) FRAME_STOP_EVENTS.forEach((type) => running.frameWin.removeEventListener(type, cancel, true));
+    running = null;
   }
 
   function play() {
@@ -133,8 +136,11 @@
     arrow.style.width = ARROW[0].length * SCALE + "px";
     arrow.style.height = ARROW.length * SCALE + "px";
 
-    running = { layer, btn, view, timers: [] };
+    let frameWin = null;
+    try { frameWin = view.querySelector("iframe").contentWindow; } catch (e) { frameWin = null; }
+    running = { layer, btn, view, frameWin, timers: [] };
     STOP_EVENTS.forEach((type) => window.addEventListener(type, onStopEvent, true));
+    if (frameWin) FRAME_STOP_EVENTS.forEach((type) => frameWin.addEventListener(type, cancel, { capture: true, passive: true }));
     const at = (ms, fn) => running.timers.push(setTimeout(fn, ms));
 
     // Where to start (upper middle-right; middle of the screen on small screens) and end (on the button)
