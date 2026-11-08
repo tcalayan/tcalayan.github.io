@@ -1,0 +1,979 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pharmacy Sales Analysis</title>
+<style>
+:root{
+  --bg:#fafaf9; --surface:#ffffff; --text:#1c1917; --muted:#57534e; --line:#e7e5e4;
+  --zebra:#f7f7f5; --code-bg:#f4f4f2; --accent:#0f766e; --accent-soft:#e6f4f1;
+  --flag:#fdecea; --flag-text:#9f1d1d; --warm:#e8590c; --cool:#1c7ed6; --neg:#b42318;
+  --k:#7c3aed; --f:#0f766e; --s:#b45309; --c:#78716c;
+  --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --v-other:#c9c7c0; --v-grid:#e1e0d9; --v-axis:#c3c2b7;
+  --v-muted:#898781; --v-bad:#d03b3b; --v-band:rgba(137,135,129,.12);
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#121212; --surface:#1b1b1a; --text:#ecebe9; --muted:#a8a29e; --line:#2f2e2c;
+    --zebra:#20201f; --code-bg:#232322; --accent:#2dd4bf; --accent-soft:#11302c;
+    --flag:#3a1d1b; --flag-text:#fca5a5; --warm:#f76707; --cool:#339af0; --neg:#f87171;
+    --k:#c4b5fd; --f:#5eead4; --s:#fbbf24; --c:#a8a29e;
+    --s1:#3987e5; --s2:#d95926; --s3:#199e70; --v-other:#4a4945; --v-grid:#2c2c2a; --v-axis:#383835;
+    --v-muted:#898781; --v-bad:#e66767; --v-band:rgba(137,135,129,.16);
+  }
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth; scroll-padding-top:64px}
+body{margin:0; background:var(--bg); color:var(--text);
+  font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+.wrap{max-width:900px; margin:0 auto; padding:0 16px}
+header.hero{padding:56px 0 28px}
+header.hero h1{font-size:clamp(1.6rem,4vw,2.3rem); line-height:1.2; margin:0 0 10px; letter-spacing:-.01em}
+header.hero p{margin:0; color:var(--muted); font-style:italic}
+nav.toc{position:sticky; top:0; z-index:10; background:color-mix(in srgb,var(--bg) 92%,transparent);
+  backdrop-filter:blur(6px); border-bottom:1px solid var(--line)}
+nav.toc .wrap{display:flex; gap:4px; overflow-x:auto; padding-top:10px; padding-bottom:10px; scrollbar-width:none}
+nav.toc a{white-space:nowrap; text-decoration:none; color:var(--muted); font-size:.85rem;
+  padding:4px 10px; border-radius:999px}
+nav.toc a:hover{background:var(--accent-soft); color:var(--accent)}
+section{padding:44px 0 12px; border-bottom:1px solid var(--line)}
+section:last-of-type{border-bottom:0}
+h2{font-size:1.55rem; margin:0 0 14px; line-height:1.25}
+h3{font-size:1.1rem; margin:34px 0 10px}
+h4{margin:0 0 8px; font-size:1rem}
+.eyebrow{margin:0 0 4px; color:var(--accent); font-weight:600; font-size:.8rem; letter-spacing:.06em; text-transform:uppercase}
+.why{background:var(--accent-soft); border-left:3px solid var(--accent); padding:10px 14px; border-radius:0 6px 6px 0; margin:0 0 18px}
+.why span{font-weight:700; color:var(--accent); margin-right:6px}
+.method,.note{color:var(--muted); font-size:.93rem}
+.note{font-style:italic}
+.result{margin:10px 0}
+ul.summary{padding:0; list-style:none; margin:0}
+ul.summary li{background:var(--surface); border:1px solid var(--line); border-radius:8px; padding:12px 16px; margin-bottom:10px}
+code{font:.88em ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; background:var(--code-bg); padding:1px 5px; border-radius:4px}
+details.sql{margin:12px 0}
+details summary{cursor:pointer; color:var(--accent); font-weight:600; font-size:.92rem; padding:4px 0; user-select:none}
+details.sql pre{margin:8px 0 0; background:var(--code-bg); border:1px solid var(--line); border-radius:8px;
+  padding:14px 16px; overflow-x:auto; font:13px/1.55 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+details.sql pre code{background:none; padding:0; font:inherit}
+.k{color:var(--k); font-weight:600} .f{color:var(--f)} .s{color:var(--s)} .c{color:var(--c); font-style:italic}
+details.long{margin:12px 0}
+.tbl{overflow-x:auto; margin:12px 0; border:1px solid var(--line); border-radius:8px; background:var(--surface)}
+.tbl.scroll{max-height:460px; overflow-y:auto}
+table{border-collapse:collapse; width:100%; font-size:.9rem; font-variant-numeric:tabular-nums}
+th,td{padding:7px 12px; text-align:left; border-bottom:1px solid var(--line); white-space:nowrap}
+thead th{position:sticky; top:0; background:var(--surface); font-weight:600; color:var(--muted);
+  font-size:.8rem; box-shadow:inset 0 -1px 0 var(--line); z-index:1}
+tbody tr:nth-child(even){background:var(--zebra)}
+tbody tr:last-child td,tbody tr:last-child th{border-bottom:0}
+tbody th{font-weight:500}
+.n{text-align:right}
+td.hi,span.hi{font-weight:700; background:var(--accent-soft); color:var(--accent)}
+span.hi{padding:1px 5px; border-radius:4px}
+td.neg{color:var(--neg)}
+tr.hi-row td{background:var(--accent-soft); font-weight:600}
+tr.flag td{background:var(--flag); color:var(--flag-text); font-weight:700}
+tr.yr2017 td{background:color-mix(in srgb,var(--flag) 55%,transparent)}
+.means{margin:22px 0 18px}
+.means h4{color:var(--accent); text-transform:uppercase; font-size:.8rem; letter-spacing:.06em}
+.means ul{margin:0; padding-left:20px} .means li{margin-bottom:6px}
+.means ul ul{margin-top:6px}
+.inline-means{margin:12px 0}
+.tags{display:flex; flex-wrap:wrap; gap:8px}
+.tags span{border:1px solid var(--accent); color:var(--accent); border-radius:999px; padding:3px 12px; font-size:.85rem}
+.chart{background:var(--surface); border:1px solid var(--line); border-radius:8px; padding:16px; margin:16px 0}
+.chart-title{font-weight:600; font-size:.9rem; color:var(--muted); margin:18px 0 10px}
+.chart .chart-title{margin-top:0}
+.bar-row{display:grid; grid-template-columns:minmax(120px,240px) 1fr 52px; gap:10px; align-items:center; margin:7px 0; font-size:.88rem}
+.bar-label{overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.bar-track{background:var(--zebra); border-radius:4px; height:16px; overflow:hidden}
+.bar{display:block; height:100%; background:color-mix(in srgb,var(--s1) 45%,var(--surface)); border-radius:0 4px 4px 0}
+.bar-row.top .bar{background:var(--s1)}
+.bar-row.top{font-weight:700}
+.bar-val{text-align:right; font-variant-numeric:tabular-nums}
+.rankgrid{display:grid; grid-template-columns:repeat(6,1fr); gap:8px}
+.rankgrid .yr{background:var(--surface); border:1px solid var(--line); border-radius:8px; padding:10px}
+.rankgrid h5{margin:0 0 8px; font-size:.95rem}
+.rankgrid ol{list-style:none; padding:0; margin:0}
+.rankgrid li{font-size:.78rem; line-height:1.3; padding:6px; border-radius:6px; margin-bottom:4px; display:grid; gap:2px}
+.rankgrid li.third{background:var(--zebra)}
+.rankgrid li.third.airway{background:var(--accent); color:#fff}
+@media (prefers-color-scheme: dark){ .rankgrid li.third.airway{color:#0b1f1c} }
+.rankgrid .rk{font-weight:700} .rankgrid .v{color:inherit; opacity:.75; font-variant-numeric:tabular-nums}
+table.heat td{text-align:center; font-variant-numeric:tabular-nums}
+table.heat td.strong{font-weight:700}
+table.heat tbody tr:nth-child(even){background:none}
+.legend{font-size:.82rem; color:var(--muted); margin:6px 0 0}
+.sw{display:inline-block; width:12px; height:12px; border-radius:3px; vertical-align:-1px; margin-right:4px}
+.sw-hi{background:var(--accent-soft); border:1px solid var(--accent)}
+.sw-2017{background:var(--flag)}
+.sw-warm{background:var(--warm)} .sw-cool{background:var(--cool)}
+.callout{background:var(--surface); border:1px solid var(--line); border-left:4px solid var(--accent); border-radius:8px; padding:14px 18px; margin:14px 0}
+.callout ul{margin:0; padding-left:20px}
+.feature{margin:30px 0 8px; padding:18px; border:2px solid var(--accent); border-radius:12px; background:var(--accent-soft)}
+.feature h3{margin-top:0}
+.feature .tbl{background:var(--surface)}
+.notes{font-size:.93rem; color:var(--muted)}
+footer{padding:28px 0 48px; color:var(--muted); font-size:.85rem; border-top:1px solid var(--line); margin-top:24px}
+@media (max-width:640px){
+  .rankgrid{grid-template-columns:repeat(3,1fr)}
+  .bar-row{grid-template-columns:110px 1fr 46px; font-size:.8rem}
+  th,td{padding:6px 9px}
+}
+
+.viz{margin:18px 0; padding:16px; background:var(--surface); border:1px solid var(--line); border-radius:10px}
+.viz-head{display:flex; justify-content:space-between; gap:12px; align-items:flex-start; margin-bottom:10px}
+.viz-title{margin:0; font-weight:650; font-size:.98rem}
+.viz-sub{margin:2px 0 0; color:var(--muted); font-size:.84rem}
+.replay{flex:none; border:1px solid var(--line); background:var(--surface); color:var(--muted); border-radius:999px;
+  padding:4px 12px; font:inherit; font-size:.8rem; cursor:pointer}
+.replay:hover{color:var(--accent); border-color:var(--accent)}
+.viz-host{position:relative}
+.viz-host svg{display:block; max-width:100%; overflow:visible; touch-action:pan-y}
+.viz text{font-family:inherit}
+.viz .grid{stroke:var(--v-grid); stroke-width:1}
+.viz .axis{stroke:var(--v-axis); stroke-width:1}
+.viz .tick{fill:var(--v-muted); font-size:11px; font-variant-numeric:tabular-nums}
+.viz .tick-faint{opacity:.8}
+.viz .axis-title{fill:var(--muted); font-size:11px}
+.viz .val{fill:var(--text); font-size:11px; font-weight:600; font-variant-numeric:tabular-nums}
+.viz .annot{fill:var(--text); font-size:12px; font-weight:600}
+.viz .end-label{fill:var(--text); font-size:12px}
+.viz .row-label{fill:var(--muted); font-size:12px}
+.viz .row-label.strong{fill:var(--text); font-weight:650}
+.viz .leader{stroke:var(--v-muted); stroke-width:1}
+.bar-s1{fill:var(--s1)}
+.bar-bad,.dot-bad{fill:var(--v-bad)}
+.dot-bad{stroke:var(--surface); stroke-width:2}
+.line{fill:none; stroke-width:2; stroke-linejoin:round; stroke-linecap:round}
+.line.s1{stroke:var(--s1)} .line.s2{stroke:var(--s2)} .line.s3{stroke:var(--s3)}
+.line.muted{stroke:var(--v-other); stroke-width:1.5}
+.dot{stroke:var(--surface); stroke-width:2}
+.dot.s1{fill:var(--s1)} .dot.s2{fill:var(--s2)} .dot.s3{fill:var(--s3)}
+.band-2017{fill:var(--v-band)}
+.pt{fill:var(--s1); fill-opacity:.8; stroke:var(--surface); stroke-width:1.5}
+.trend{fill:none; stroke:var(--s2); stroke-width:2.5; stroke-linecap:round}
+.chance{fill:var(--v-band)}
+.conn{fill:none; stroke:var(--v-axis); stroke-width:2; stroke-linecap:round}
+.pt-raw{fill:var(--surface); stroke:var(--v-muted); stroke-width:1.5}
+.pt-chg{fill:var(--v-muted); stroke:var(--surface); stroke-width:2}
+.pt-chg.strong{fill:var(--s1)}
+.hover-ring{fill:none; stroke:var(--text); stroke-width:1.5; pointer-events:none}
+.viz-tip{position:fixed; z-index:50; pointer-events:none; background:var(--surface); color:var(--text);
+  border:1px solid var(--line); box-shadow:0 4px 16px rgba(0,0,0,.12); border-radius:8px; padding:7px 10px;
+  font-size:.8rem; line-height:1.45; max-width:240px}
+.viz-legend{display:flex; flex-wrap:wrap; gap:6px 16px; font-size:.82rem; color:var(--muted); margin:0 0 8px}
+.viz-legend span{display:inline-flex; align-items:center; gap:6px}
+.key{display:inline-block; width:16px; height:3px; border-radius:2px}
+.key.s1{background:var(--s1)} .key.s2{background:var(--s2)} .key.s3{background:var(--s3)} .key.muted{background:var(--v-other)}
+.key-dot{display:inline-block; width:10px; height:10px; border-radius:50%; background:var(--v-muted)}
+.key-dot.hollow{background:none; border:1.5px solid var(--v-muted)}
+.key-dot.strong{background:var(--s1)}
+.multiples{display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:14px 16px}
+.mini-title{font-size:.84rem; font-weight:650; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.mini-sub{font-size:.76rem; color:var(--muted); margin-bottom:2px; font-variant-numeric:tabular-nums}
+.scatter-grid{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:18px}
+.scatter-panel .mini-title{white-space:normal}
+.db-panel .mini-title{margin-bottom:2px}
+.drug-picker{display:flex; flex-wrap:wrap; gap:6px; margin:0 0 12px}
+.drug-picker button{font:inherit; font-size:.8rem; padding:4px 11px; border-radius:999px; border:1px solid var(--line);
+  background:var(--surface); color:var(--muted); cursor:pointer}
+.drug-picker button[aria-pressed="true"]{background:var(--s1); border-color:var(--s1); color:#fff}
+.viz-takeaway{margin:10px 0 0; font-size:.9rem}
+/* CSS-only animations (Q1 bars, Q3 grid) */
+.chart .bar{width:var(--w); transition:width .9s cubic-bezier(.25,.7,.25,1); transition-delay:calc(var(--i) * 90ms)}
+.js .chart:not(.in) .bar{width:0}
+.rankgrid .yr{transition:opacity .5s ease, transform .5s ease}
+.js .rankgrid:not(.in) .yr{opacity:0; transform:translateY(8px)}
+.rankgrid .yr:nth-child(2){transition-delay:.12s} .rankgrid .yr:nth-child(3){transition-delay:.24s}
+.rankgrid .yr:nth-child(4){transition-delay:.36s} .rankgrid .yr:nth-child(5){transition-delay:.48s}
+.rankgrid .yr:nth-child(6){transition-delay:.6s}
+@media (max-width:720px){ .multiples{grid-template-columns:repeat(2,minmax(0,1fr))} }
+@media (max-width:640px){ .scatter-grid{grid-template-columns:1fr} .viz{padding:12px} }
+</style>
+<script>document.documentElement.classList.add("js")</script>
+</head>
+<body>
+<header class="hero"><div class="wrap">
+<h1>What Drives Pharmacy Sales? A SQL Analysis of Drug Sales, Seasons, Weather, and Search Trends</h1>
+<p>Tyra Calayan · SQL (SQLite) portfolio project</p>
+</div></header>
+<nav class="toc" aria-label="Contents"><div class="wrap"><a href="#summary">Summary</a><a href="#about">Data</a><a href="#prep">Cleaning</a><a href="#q1">Q1 Top sellers</a><a href="#q2">Q2 Growth</a><a href="#q3">Q3 Top 3</a><a href="#q4">Q4 Seasons</a><a href="#part2">Weather &amp; searches</a><a href="#limits">Limitations</a></div></nav>
+<main class="wrap">
+
+<section id="summary">
+<h2>Summary</h2>
+<ul class="summary">
+<li><b>Pain and fever drugs (paracetamol &amp; metamizole-type) make up about half of all sales (49.3%).</b> Pain and anti-inflammatory drugs together make up about 70%.</li>
+<li><b>Respiratory (airway) and allergy drugs are the growth story.</b> Airway drugs about doubled from 2014 to 2018 and held the #3 spot from 2016 to 2019.</li>
+<li><b>Three classes are strongly seasonal:</b> antihistamines peak in spring, while pain/fever and airway drugs peak in winter.</li>
+<li><b>Outside signals track sales for seasonal drugs.</b> Antihistamine sales follow allergy searches and warm weather; pain/fever and airway sales follow cold weather. These links held even after removing long-term trends.</li>
+<li><b>Searches don't predict prescription drugs</b> like anxiolytics and sedatives.</li>
+</ul>
+</section>
+<section id="about">
+<h2>About the data</h2>
+<ul>
+<li><b>Sales:</b> Kaggle “Pharma sales data”: monthly sales from <b>one pharmacy in Serbia (Niš)</b>, Jan 2014 – Oct 2019, for 8 drug classes (ATC codes).</li>
+<li><b>Why Serbian data?</b> Public pharmacy sales data for the Philippines isn't available, so this is used as a <b>proxy</b> to show the methods.</li>
+<li><b>Google Trends (Serbia, monthly):</b> 6 search terms, each downloaded separately (each has its own 0–100 scale).</li>
+<li><b>Weather (Open-Meteo Historical API):</b> daily weather for Niš, aggregated to monthly.</li>
+<li><b>Tool:</b> SQLite (DB Browser for SQLite)</li>
+</ul>
+<h3>The 8 drug classes</h3>
+<div class="tbl"><table><thead><tr><th class="">ATC code</th><th class="">Drug class (label used)</th><th class="">Common use</th></tr></thead><tbody><tr class=""><td class="">M01AB</td><td class="">Diclofenac-type</td><td class="">Anti-inflammatory</td></tr><tr class=""><td class="">M01AE</td><td class="">Ibuprofen-type</td><td class="">Anti-inflammatory</td></tr><tr class=""><td class="">N02BA</td><td class="">Aspirin-type</td><td class="">Pain relief</td></tr><tr class=""><td class="">N02BE</td><td class="">Paracetamol-type &amp; metamizole-type</td><td class="">Pain relief</td></tr><tr class=""><td class="">N05B</td><td class="">Anxiolytics</td><td class="">Anxiety</td></tr><tr class=""><td class="">N05C</td><td class="">Sedatives</td><td class="">Sleep</td></tr><tr class=""><td class="">R03</td><td class="">Airway drugs</td><td class="">Asthma/respiratory</td></tr><tr class=""><td class="">R06</td><td class="">Antihistamines</td><td class="">Allergy</td></tr></tbody></table></div>
+<p class="note">N02BE covers both paracetamol (anilides) and metamizole (pyrazolones), so it is not only paracetamol.</p>
+<h3>SQL skills used</h3>
+<div class="tags"><span>GROUP BY + aggregates</span><span>JOIN</span><span>CASE WHEN</span><span>CTEs</span><span>Window functions (LAG, RANK, AVG OVER)</span><span>Views</span><span>Subqueries</span><span>Date functions (strftime, substr, date)</span></div>
+</section>
+<section id="prep">
+<p class="eyebrow">Section 1</p>
+<h2>Data preparation and cleaning</h2>
+<p class="why"><span>Why it matters</span> Clean data first, so the results can be trusted.</p>
+
+<h3>Step 1: Check the date range</h3>
+<details class="sql"><summary>Show SQL</summary><pre><code><span class="k">SELECT</span>
+  <span class="f">COUNT</span>(*)   <span class="k">AS</span> total_months,
+  <span class="f">MIN</span>(datum) <span class="k">AS</span> first_date,
+  <span class="f">MAX</span>(datum) <span class="k">AS</span> last_date
+<span class="k">FROM</span> salesmonthly;</code></pre></details>
+<div class="tbl"><table><thead><tr><th class="n">total_months</th><th class="">first_date</th><th class="">last_date</th></tr></thead><tbody><tr class=""><td class="n">70</td><td class="">2014-01-31</td><td class="">2019-10-31</td></tr></tbody></table></div>
+
+<h3>Step 2: Spot an incomplete last month</h3>
+<details class="sql"><summary>Show SQL</summary><pre><code><span class="k">SELECT</span> *
+<span class="k">FROM</span> salesmonthly
+<span class="k">ORDER</span> <span class="k">BY</span> datum <span class="k">DESC</span>
+<span class="k">LIMIT</span> 3;</code></pre></details>
+<div class="tbl"><table><thead><tr><th class="">datum</th><th class="n">M01AB</th><th class="n">M01AE</th><th class="n">N02BA</th><th class="n">N02BE</th><th class="n">N05B</th><th class="n">N05C</th><th class="n">R03</th><th class="n">R06</th></tr></thead><tbody><tr class="flag"><td class="">2019-10-31</td><td class="n">44.37</td><td class="n">37.3</td><td class="n">20.65</td><td class="n">295.15</td><td class="n">86.0</td><td class="n">7.0</td><td class="n">37.0</td><td class="n">11.13</td></tr><tr class=""><td class="">2019-09-30</td><td class="n">161.07</td><td class="n">111.437</td><td class="n">93.5</td><td class="n">984.48</td><td class="n">227.8</td><td class="n">16.0</td><td class="n">161.0</td><td class="n">109.1</td></tr><tr class=""><td class="">2019-08-31</td><td class="n">181.91</td><td class="n">88.269</td><td class="n">84.2</td><td class="n">518.1</td><td class="n">237.0</td><td class="n">26.0</td><td class="n">145.0</td><td class="n">97.3</td></tr></tbody></table></div>
+<p class="inline-means"><b>What it means:</b> Every drug class drops to a quarter or less in Oct 2019 at the same time. A real market change wouldn't hit all 8 drugs evenly, so this is a <b>partial month</b> and is excluded.</p>
+
+<h3>Step 3: Reshape from “wide” to “long”</h3>
+<p>The original table has one column per drug. To use GROUP BY by drug, we stack it into one row per month per drug.</p>
+<details class="sql"><summary>Show SQL</summary><pre><code><span class="c">-- Reshaping data: one row per month per drug class (excludes Oct 2019, partial month)</span>
+<span class="k">CREATE</span> <span class="k">VIEW</span> sales_long <span class="k">AS</span>
+<span class="k">SELECT</span> datum, <span class="s">&#x27;M01AB&#x27;</span> <span class="k">AS</span> atc_code, M01AB <span class="k">AS</span> units_sold <span class="k">FROM</span> salesmonthly <span class="k">WHERE</span> datum &lt; <span class="s">&#x27;2019-10-01&#x27;</span>
+<span class="k">UNION</span> <span class="k">ALL</span>
+<span class="k">SELECT</span> datum, <span class="s">&#x27;M01AE&#x27;</span>, M01AE <span class="k">FROM</span> salesmonthly <span class="k">WHERE</span> datum &lt; <span class="s">&#x27;2019-10-01&#x27;</span>
+<span class="k">UNION</span> <span class="k">ALL</span>
+<span class="k">SELECT</span> datum, <span class="s">&#x27;N02BA&#x27;</span>, N02BA <span class="k">FROM</span> salesmonthly <span class="k">WHERE</span> datum &lt; <span class="s">&#x27;2019-10-01&#x27;</span>
+<span class="k">UNION</span> <span class="k">ALL</span>
+<span class="k">SELECT</span> datum, <span class="s">&#x27;N02BE&#x27;</span>, N02BE <span class="k">FROM</span> salesmonthly <span class="k">WHERE</span> datum &lt; <span class="s">&#x27;2019-10-01&#x27;</span>
+<span class="k">UNION</span> <span class="k">ALL</span>
+<span class="k">SELECT</span> datum, <span class="s">&#x27;N05B&#x27;</span>, N05B <span class="k">FROM</span> salesmonthly <span class="k">WHERE</span> datum &lt; <span class="s">&#x27;2019-10-01&#x27;</span>
+<span class="k">UNION</span> <span class="k">ALL</span>
+<span class="k">SELECT</span> datum, <span class="s">&#x27;N05C&#x27;</span>, N05C <span class="k">FROM</span> salesmonthly <span class="k">WHERE</span> datum &lt; <span class="s">&#x27;2019-10-01&#x27;</span>
+<span class="k">UNION</span> <span class="k">ALL</span>
+<span class="k">SELECT</span> datum, <span class="s">&#x27;R03&#x27;</span>, R03 <span class="k">FROM</span> salesmonthly <span class="k">WHERE</span> datum &lt; <span class="s">&#x27;2019-10-01&#x27;</span>
+<span class="k">UNION</span> <span class="k">ALL</span>
+<span class="k">SELECT</span> datum, <span class="s">&#x27;R06&#x27;</span>, R06 <span class="k">FROM</span> salesmonthly <span class="k">WHERE</span> datum &lt; <span class="s">&#x27;2019-10-01&#x27;</span>;</code></pre></details>
+<p class="result">Result: <b>552 rows</b> (69 months × 8 drugs).</p>
+
+<h3>Step 4: Find and remove a missing month</h3>
+<details class="sql"><summary>Show SQL</summary><pre><code><span class="k">SELECT</span>
+  datum,
+  <span class="f">ROUND</span>(<span class="f">SUM</span>(units_sold), 0) <span class="k">AS</span> total_units
+<span class="k">FROM</span> sales_long
+<span class="k">WHERE</span> datum <span class="k">BETWEEN</span> <span class="s">&#x27;2016-07-01&#x27;</span> <span class="k">AND</span> <span class="s">&#x27;2018-06-30&#x27;</span>
+<span class="k">GROUP</span> <span class="k">BY</span> datum
+<span class="k">ORDER</span> <span class="k">BY</span> datum;</code></pre></details>
+<figure class="viz"><div class="viz-head"><div><p class="viz-title">Total units sold each month, Jul 2016 – Jun 2018</p><p class="viz-sub">Hover or tap a bar to see the exact number.</p></div><button class="replay" type="button">↻ Replay</button></div><div class="viz-host" id="v-step4" style="min-height:240px"></div></figure>
+<details class="long" open><summary>Monthly totals, Jul 2016 – Jun 2018 (24 rows)</summary><div class="tbl scroll"><table><thead><tr><th class="">datum</th><th class="n">total_units</th></tr></thead><tbody><tr class=""><td class="">2016-07-31</td><td class="n">1609</td></tr><tr class=""><td class="">2016-08-31</td><td class="n">1700</td></tr><tr class=""><td class="">2016-09-30</td><td class="n">2050</td></tr><tr class=""><td class="">2016-10-31</td><td class="n">2710</td></tr><tr class=""><td class="">2016-11-30</td><td class="n">1963</td></tr><tr class=""><td class="">2016-12-31</td><td class="n">2646</td></tr><tr class="flag"><td class="">2017-01-31</td><td class="n">1</td></tr><tr class=""><td class="">2017-02-28</td><td class="n">1165</td></tr><tr class=""><td class="">2017-03-31</td><td class="n">1407</td></tr><tr class=""><td class="">2017-04-30</td><td class="n">1370</td></tr><tr class=""><td class="">2017-05-31</td><td class="n">1369</td></tr><tr class=""><td class="">2017-06-30</td><td class="n">1327</td></tr><tr class=""><td class="">2017-07-31</td><td class="n">1261</td></tr><tr class=""><td class="">2017-08-31</td><td class="n">1302</td></tr><tr class=""><td class="">2017-09-30</td><td class="n">1661</td></tr><tr class=""><td class="">2017-10-31</td><td class="n">2050</td></tr><tr class=""><td class="">2017-11-30</td><td class="n">1706</td></tr><tr class=""><td class="">2017-12-31</td><td class="n">1887</td></tr><tr class=""><td class="">2018-01-31</td><td class="n">1986</td></tr><tr class=""><td class="">2018-02-28</td><td class="n">2203</td></tr><tr class=""><td class="">2018-03-31</td><td class="n">2157</td></tr><tr class=""><td class="">2018-04-30</td><td class="n">1934</td></tr><tr class=""><td class="">2018-05-31</td><td class="n">1675</td></tr><tr class=""><td class="">2018-06-30</td><td class="n">1414</td></tr></tbody></table></div></details>
+<p class="inline-means"><b>What it means:</b> Jan 2017 has just <b>1 unit</b> for the whole pharmacy, so it's <b>missing data</b>, not real sales.</p>
+<details class="sql"><summary>Show SQL (clean view)</summary><pre><code><span class="c">-- Clean version: excludes Jan 2017 (missing data, only 1 unit recorded)</span>
+<span class="k">CREATE</span> <span class="k">VIEW</span> sales_clean <span class="k">AS</span>
+<span class="k">SELECT</span> *
+<span class="k">FROM</span> sales_long
+<span class="k">WHERE</span> datum &lt;&gt; <span class="s">&#x27;2017-01-31&#x27;</span>;</code></pre></details>
+<p class="result">Result: <b>544 rows</b> (68 months × 8 drugs). All analysis below uses <code>sales_clean</code>.</p>
+
+<h3>Step 5: Lookup table for readable drug names</h3>
+<details class="sql"><summary>Show SQL</summary><pre><code><span class="k">CREATE</span> <span class="k">TABLE</span> drug_names (
+  atc_code   <span class="k">TEXT</span> <span class="k">PRIMARY</span> <span class="k">KEY</span>,
+  drug_class <span class="k">TEXT</span>,
+  common_use <span class="k">TEXT</span>
+);
+
+<span class="k">INSERT</span> <span class="k">INTO</span> drug_names <span class="k">VALUES</span>
+  (<span class="s">&#x27;M01AB&#x27;</span>, <span class="s">&#x27;Diclofenac-type&#x27;</span>, <span class="s">&#x27;Anti-inflammatory&#x27;</span>),
+  (<span class="s">&#x27;M01AE&#x27;</span>, <span class="s">&#x27;Ibuprofen-type&#x27;</span>, <span class="s">&#x27;Anti-inflammatory&#x27;</span>),
+  (<span class="s">&#x27;N02BA&#x27;</span>, <span class="s">&#x27;Aspirin-type&#x27;</span>, <span class="s">&#x27;Pain relief&#x27;</span>),
+  (<span class="s">&#x27;N02BE&#x27;</span>, <span class="s">&#x27;Paracetamol-type &amp; metamizole-type&#x27;</span>, <span class="s">&#x27;Pain relief&#x27;</span>),
+  (<span class="s">&#x27;N05B&#x27;</span>, <span class="s">&#x27;Anxiolytics&#x27;</span>, <span class="s">&#x27;Anxiety&#x27;</span>),
+  (<span class="s">&#x27;N05C&#x27;</span>, <span class="s">&#x27;Sedatives&#x27;</span>, <span class="s">&#x27;Sleep&#x27;</span>),
+  (<span class="s">&#x27;R03&#x27;</span>, <span class="s">&#x27;Airway drugs&#x27;</span>, <span class="s">&#x27;Asthma/respiratory&#x27;</span>),
+  (<span class="s">&#x27;R06&#x27;</span>, <span class="s">&#x27;Antihistamines&#x27;</span>, <span class="s">&#x27;Allergy&#x27;</span>);</code></pre></details>
+</section>
+<section id="q1">
+<p class="eyebrow">Section 2 · Q1</p>
+<h2>Which drug classes sold the most?</h2>
+<p class="why"><span>Why it matters</span> Shows which products drive the business.</p>
+<details class="sql"><summary>Show SQL</summary><pre><code><span class="c">-- Q1: Total units sold per drug class (Jan 2014 - Sep 2019)</span>
+<span class="k">SELECT</span>
+  d.drug_class,
+  d.common_use,
+  <span class="f">ROUND</span>(<span class="f">SUM</span>(s.units_sold), 0) <span class="k">AS</span> total_units,
+  <span class="f">ROUND</span>(100.0 * <span class="f">SUM</span>(s.units_sold) /
+        (<span class="k">SELECT</span> <span class="f">SUM</span>(units_sold) <span class="k">FROM</span> sales_clean), 1) <span class="k">AS</span> pct_of_total
+<span class="k">FROM</span> drug_names <span class="k">AS</span> d
+<span class="k">JOIN</span> sales_clean <span class="k">AS</span> s
+  <span class="k">ON</span> d.atc_code = s.atc_code
+<span class="k">GROUP</span> <span class="k">BY</span> d.drug_class, d.common_use
+<span class="k">ORDER</span> <span class="k">BY</span> total_units <span class="k">DESC</span>;</code></pre></details>
+<div class="tbl"><table><thead><tr><th class="">drug_class</th><th class="">common_use</th><th class="n">total_units</th><th class="n">pct_of_total</th></tr></thead><tbody><tr class="hi-row"><td class="">Paracetamol-type &amp; metamizole-type</td><td class="">Pain relief</td><td class="n">62183</td><td class="n">49.3</td></tr><tr class=""><td class="">Anxiolytics</td><td class="">Anxiety</td><td class="n">18262</td><td class="n">14.5</td></tr><tr class=""><td class="">Airway drugs</td><td class="">Asthma/respiratory</td><td class="n">11700</td><td class="n">9.3</td></tr><tr class=""><td class="">Diclofenac-type</td><td class="">Anti-inflammatory</td><td class="n">10455</td><td class="n">8.3</td></tr><tr class=""><td class="">Ibuprofen-type</td><td class="">Anti-inflammatory</td><td class="n">8119</td><td class="n">6.4</td></tr><tr class=""><td class="">Aspirin-type</td><td class="">Pain relief</td><td class="n">8031</td><td class="n">6.4</td></tr><tr class=""><td class="">Antihistamines</td><td class="">Allergy</td><td class="n">6055</td><td class="n">4.8</td></tr><tr class=""><td class="">Sedatives</td><td class="">Sleep</td><td class="n">1242</td><td class="n">1.0</td></tr></tbody></table></div>
+<div class="chart" role="img" aria-label="Share of total units sold by drug class">
+<p class="chart-title">Share of total units sold (%)</p>
+<div class="bar-row top"><span class="bar-label">Paracetamol-type &amp; metamizole-type</span><span class="bar-track"><span class="bar" style="--w:100.0%;--i:0"></span></span><span class="bar-val">49.3%</span></div><div class="bar-row"><span class="bar-label">Anxiolytics</span><span class="bar-track"><span class="bar" style="--w:29.4%;--i:1"></span></span><span class="bar-val">14.5%</span></div><div class="bar-row"><span class="bar-label">Airway drugs</span><span class="bar-track"><span class="bar" style="--w:18.9%;--i:2"></span></span><span class="bar-val">9.3%</span></div><div class="bar-row"><span class="bar-label">Diclofenac-type</span><span class="bar-track"><span class="bar" style="--w:16.8%;--i:3"></span></span><span class="bar-val">8.3%</span></div><div class="bar-row"><span class="bar-label">Ibuprofen-type</span><span class="bar-track"><span class="bar" style="--w:13.0%;--i:4"></span></span><span class="bar-val">6.4%</span></div><div class="bar-row"><span class="bar-label">Aspirin-type</span><span class="bar-track"><span class="bar" style="--w:13.0%;--i:5"></span></span><span class="bar-val">6.4%</span></div><div class="bar-row"><span class="bar-label">Antihistamines</span><span class="bar-track"><span class="bar" style="--w:9.7%;--i:6"></span></span><span class="bar-val">4.8%</span></div><div class="bar-row"><span class="bar-label">Sedatives</span><span class="bar-track"><span class="bar" style="--w:2.0%;--i:7"></span></span><span class="bar-val">1.0%</span></div>
+</div>
+<div class="means"><h4>What it means</h4><ul><li>Pain and fever drugs make up <b>about half of all sales (49.3%)</b>, more than the next three classes combined.</li><li>All pain and anti-inflammatory drugs together make up <b>about 70%</b>.</li><li>Anxiolytics are a surprising <b>#2 (14.5%)</b>. Sedatives barely sell (1%).</li></ul></div>
+</section>
+<section id="q2">
+<p class="eyebrow">Section 3 · Q2</p>
+<h2>How did sales grow each year?</h2>
+<p class="why"><span>Why it matters</span> Shows which categories are growing or shrinking.</p>
+<p class="method"><b>Method note:</b> 2019 only has 9 months, so we compare <b>average monthly sales per year</b>, not yearly totals. A dash (—) in 2014 means there's no earlier year to compare to.</p>
+<details class="sql"><summary>Show SQL</summary><pre><code><span class="c">-- Q2: Year-over-year growth in average monthly sales per drug class</span>
+<span class="k">WITH</span> yearly <span class="k">AS</span> (
+  <span class="k">SELECT</span>
+    d.drug_class,
+    <span class="f">strftime</span>(<span class="s">&#x27;%Y&#x27;</span>, s.datum) <span class="k">AS</span> year,
+    <span class="f">AVG</span>(s.units_sold) <span class="k">AS</span> avg_monthly_units
+  <span class="k">FROM</span> sales_clean <span class="k">AS</span> s
+  <span class="k">JOIN</span> drug_names <span class="k">AS</span> d
+    <span class="k">ON</span> s.atc_code = d.atc_code
+  <span class="k">GROUP</span> <span class="k">BY</span> d.drug_class, year
+)
+<span class="k">SELECT</span>
+  drug_class,
+  year,
+  <span class="f">ROUND</span>(avg_monthly_units, 1) <span class="k">AS</span> avg_monthly_units,
+  <span class="f">ROUND</span>(100.0 * (avg_monthly_units - <span class="f">LAG</span>(avg_monthly_units) <span class="k">OVER</span> (<span class="k">PARTITION</span> <span class="k">BY</span> drug_class <span class="k">ORDER</span> <span class="k">BY</span> year))
+        / <span class="f">LAG</span>(avg_monthly_units) <span class="k">OVER</span> (<span class="k">PARTITION</span> <span class="k">BY</span> drug_class <span class="k">ORDER</span> <span class="k">BY</span> year), 1) <span class="k">AS</span> pct_growth
+<span class="k">FROM</span> yearly
+<span class="k">ORDER</span> <span class="k">BY</span> drug_class, year;</code></pre></details>
+<figure class="viz"><div class="viz-head"><div><p class="viz-title">Average monthly units, 2014 → 2019</p><p class="viz-sub">One mini chart per drug class, each starting at zero. The shaded column is 2017.</p></div><button class="replay" type="button">↻ Replay</button></div><div class="viz-host" id="v-q2" style="min-height:300px"></div></figure>
+<details class="long" open><summary>Average monthly units and % growth, by drug class and year (48 rows)</summary><div class="tbl scroll"><table><thead><tr><th class="">drug_class</th><th class="n">year</th><th class="n">avg_monthly_units</th><th class="n">pct_growth</th></tr></thead><tbody><tr class=""><td class="">Airway drugs</td><td class="n">2014</td><td class="n hi">106.4</td><td class="n">—</td></tr><tr class=""><td class="">Airway drugs</td><td class="n">2015</td><td class="n">148.0</td><td class="n">39.1</td></tr><tr class=""><td class="">Airway drugs</td><td class="n">2016</td><td class="n">178.1</td><td class="n">20.3</td></tr><tr class="yr2017"><td class="">Airway drugs</td><td class="n">2017</td><td class="n">157.5</td><td class="n neg">-11.6</td></tr><tr class=""><td class="">Airway drugs</td><td class="n">2018</td><td class="n hi">230.4</td><td class="n">46.3</td></tr><tr class=""><td class="">Airway drugs</td><td class="n">2019</td><td class="n">223.7</td><td class="n neg">-2.9</td></tr><tr class=""><td class="">Antihistamines</td><td class="n">2014</td><td class="n hi">69.0</td><td class="n">—</td></tr><tr class=""><td class="">Antihistamines</td><td class="n">2015</td><td class="n">81.9</td><td class="n">18.7</td></tr><tr class=""><td class="">Antihistamines</td><td class="n">2016</td><td class="n">88.8</td><td class="n">8.3</td></tr><tr class="yr2017"><td class="">Antihistamines</td><td class="n">2017</td><td class="n">83.6</td><td class="n neg">-5.8</td></tr><tr class=""><td class="">Antihistamines</td><td class="n">2018</td><td class="n">99.7</td><td class="n">19.3</td></tr><tr class=""><td class="">Antihistamines</td><td class="n">2019</td><td class="n hi">118.0</td><td class="n">18.4</td></tr><tr class=""><td class="">Anxiolytics</td><td class="n">2014</td><td class="n">362.9</td><td class="n">—</td></tr><tr class=""><td class="">Anxiolytics</td><td class="n">2015</td><td class="n">247.1</td><td class="n neg">-31.9</td></tr><tr class=""><td class="">Anxiolytics</td><td class="n">2016</td><td class="n">273.2</td><td class="n">10.6</td></tr><tr class="yr2017"><td class="">Anxiolytics</td><td class="n">2017</td><td class="n">188.8</td><td class="n neg">-30.9</td></tr><tr class=""><td class="">Anxiolytics</td><td class="n">2018</td><td class="n">272.2</td><td class="n">44.2</td></tr><tr class=""><td class="">Anxiolytics</td><td class="n">2019</td><td class="n">257.7</td><td class="n neg">-5.3</td></tr><tr class=""><td class="">Aspirin-type</td><td class="n">2014</td><td class="n hi">140.3</td><td class="n">—</td></tr><tr class=""><td class="">Aspirin-type</td><td class="n">2015</td><td class="n">134.1</td><td class="n neg">-4.4</td></tr><tr class=""><td class="">Aspirin-type</td><td class="n">2016</td><td class="n">138.7</td><td class="n">3.5</td></tr><tr class="yr2017"><td class="">Aspirin-type</td><td class="n">2017</td><td class="n">99.2</td><td class="n neg">-28.5</td></tr><tr class=""><td class="">Aspirin-type</td><td class="n">2018</td><td class="n hi">93.6</td><td class="n neg">-5.6</td></tr><tr class=""><td class="">Aspirin-type</td><td class="n">2019</td><td class="n">95.5</td><td class="n">1.9</td></tr><tr class=""><td class="">Diclofenac-type</td><td class="n">2014</td><td class="n">125.9</td><td class="n">—</td></tr><tr class=""><td class="">Diclofenac-type</td><td class="n">2015</td><td class="n">158.8</td><td class="n">26.1</td></tr><tr class=""><td class="">Diclofenac-type</td><td class="n">2016</td><td class="n">177.1</td><td class="n">11.5</td></tr><tr class="yr2017"><td class="">Diclofenac-type</td><td class="n">2017</td><td class="n">150.3</td><td class="n neg">-15.1</td></tr><tr class=""><td class="">Diclofenac-type</td><td class="n">2018</td><td class="n">148.9</td><td class="n neg">-1.0</td></tr><tr class=""><td class="">Diclofenac-type</td><td class="n">2019</td><td class="n">163.7</td><td class="n">9.9</td></tr><tr class=""><td class="">Ibuprofen-type</td><td class="n">2014</td><td class="n">111.1</td><td class="n">—</td></tr><tr class=""><td class="">Ibuprofen-type</td><td class="n">2015</td><td class="n">124.7</td><td class="n">12.2</td></tr><tr class=""><td class="">Ibuprofen-type</td><td class="n">2016</td><td class="n">133.7</td><td class="n">7.2</td></tr><tr class="yr2017"><td class="">Ibuprofen-type</td><td class="n">2017</td><td class="n">110.4</td><td class="n neg">-17.4</td></tr><tr class=""><td class="">Ibuprofen-type</td><td class="n">2018</td><td class="n">115.8</td><td class="n">4.9</td></tr><tr class=""><td class="">Ibuprofen-type</td><td class="n">2019</td><td class="n">120.0</td><td class="n">3.6</td></tr><tr class=""><td class="">Paracetamol-type &amp; metamizole-type</td><td class="n">2014</td><td class="n">841.2</td><td class="n">—</td></tr><tr class=""><td class="">Paracetamol-type &amp; metamizole-type</td><td class="n">2015</td><td class="n">999.8</td><td class="n">18.8</td></tr><tr class=""><td class="">Paracetamol-type &amp; metamizole-type</td><td class="n">2016</td><td class="n">1119.7</td><td class="n">12.0</td></tr><tr class="yr2017"><td class="">Paracetamol-type &amp; metamizole-type</td><td class="n">2017</td><td class="n">697.7</td><td class="n neg">-37.7</td></tr><tr class=""><td class="">Paracetamol-type &amp; metamizole-type</td><td class="n">2018</td><td class="n">938.6</td><td class="n">34.5</td></tr><tr class=""><td class="">Paracetamol-type &amp; metamizole-type</td><td class="n">2019</td><td class="n">857.4</td><td class="n neg">-8.7</td></tr><tr class=""><td class="">Sedatives</td><td class="n">2014</td><td class="n">25.3</td><td class="n">—</td></tr><tr class=""><td class="">Sedatives</td><td class="n">2015</td><td class="n">13.3</td><td class="n neg">-47.5</td></tr><tr class=""><td class="">Sedatives</td><td class="n">2016</td><td class="n">17.3</td><td class="n">30.2</td></tr><tr class="yr2017"><td class="">Sedatives</td><td class="n">2017</td><td class="n">12.9</td><td class="n neg">-25.2</td></tr><tr class=""><td class="">Sedatives</td><td class="n">2018</td><td class="n">20.2</td><td class="n">56.2</td></tr><tr class=""><td class="">Sedatives</td><td class="n">2019</td><td class="n">21.0</td><td class="n">4.1</td></tr></tbody></table></div></details>
+<p class="legend"><span class="sw sw-hi"></span> start/end values mentioned below &nbsp; <span class="sw sw-2017"></span> 2017 (lower for every class)</p>
+<div class="means"><h4>What it means</h4><ul><li><b>Airway drugs about doubled</b> (106 → 230 per month, 2014 → 2018).</li><li><b>Antihistamines rose almost every year</b> (69 → 118 per month).</li><li><b>Aspirin-type fell about 30%</b> and stayed down.</li><li><b>Every class was lower in 2017.</b> Since all 8 dropped together, this is likely a <b>store-level issue</b> (e.g., shorter hours or incomplete records), not a change in demand. Treated as a limitation.</li><li><b>Caveat:</b> 2019 covers Jan–Sep only, which can skew averages for seasonal drugs.</li></ul></div>
+</section>
+<section id="q3">
+<p class="eyebrow">Section 4 · Q3</p>
+<h2>Which drug classes ranked top 3 each year?</h2>
+<p class="why"><span>Why it matters</span> Shows whether market leaders are stable or changing.</p>
+<details class="sql"><summary>Show SQL</summary><pre><code><span class="c">-- Q3: Top 3 drug classes each year, by average monthly sales</span>
+<span class="k">WITH</span> yearly <span class="k">AS</span> (
+  <span class="k">SELECT</span>
+    d.drug_class,
+    <span class="f">strftime</span>(<span class="s">&#x27;%Y&#x27;</span>, s.datum) <span class="k">AS</span> year,
+    <span class="f">AVG</span>(s.units_sold) <span class="k">AS</span> avg_monthly_units
+  <span class="k">FROM</span> sales_clean <span class="k">AS</span> s
+  <span class="k">JOIN</span> drug_names <span class="k">AS</span> d
+    <span class="k">ON</span> s.atc_code = d.atc_code
+  <span class="k">GROUP</span> <span class="k">BY</span> d.drug_class, year
+),
+ranked <span class="k">AS</span> (
+  <span class="k">SELECT</span>
+    year,
+    drug_class,
+    avg_monthly_units,
+    <span class="f">RANK</span>() <span class="k">OVER</span> (<span class="k">PARTITION</span> <span class="k">BY</span> year <span class="k">ORDER</span> <span class="k">BY</span> avg_monthly_units <span class="k">DESC</span>) <span class="k">AS</span> rank_in_year
+  <span class="k">FROM</span> yearly
+)
+<span class="k">SELECT</span>
+  year,
+  rank_in_year,
+  drug_class,
+  <span class="f">ROUND</span>(avg_monthly_units, 1) <span class="k">AS</span> avg_monthly_units
+<span class="k">FROM</span> ranked
+<span class="k">WHERE</span> rank_in_year &lt;= 3
+<span class="k">ORDER</span> <span class="k">BY</span> year, rank_in_year;</code></pre></details>
+<div class="tbl scroll"><table><thead><tr><th class="n">year</th><th class="n">rank_in_year</th><th class="">drug_class</th><th class="n">avg_monthly_units</th></tr></thead><tbody><tr class=""><td class="n">2014</td><td class="n">1</td><td class="">Paracetamol-type &amp; metamizole-type</td><td class="n">841.2</td></tr><tr class=""><td class="n">2014</td><td class="n">2</td><td class="">Anxiolytics</td><td class="n">362.9</td></tr><tr class="hi-row"><td class="n">2014</td><td class="n">3</td><td class="">Aspirin-type</td><td class="n">140.3</td></tr><tr class=""><td class="n">2015</td><td class="n">1</td><td class="">Paracetamol-type &amp; metamizole-type</td><td class="n">999.8</td></tr><tr class=""><td class="n">2015</td><td class="n">2</td><td class="">Anxiolytics</td><td class="n">247.1</td></tr><tr class="hi-row"><td class="n">2015</td><td class="n">3</td><td class="">Diclofenac-type</td><td class="n">158.8</td></tr><tr class=""><td class="n">2016</td><td class="n">1</td><td class="">Paracetamol-type &amp; metamizole-type</td><td class="n">1119.7</td></tr><tr class=""><td class="n">2016</td><td class="n">2</td><td class="">Anxiolytics</td><td class="n">273.2</td></tr><tr class="hi-row"><td class="n">2016</td><td class="n">3</td><td class="">Airway drugs</td><td class="n">178.1</td></tr><tr class=""><td class="n">2017</td><td class="n">1</td><td class="">Paracetamol-type &amp; metamizole-type</td><td class="n">697.7</td></tr><tr class=""><td class="n">2017</td><td class="n">2</td><td class="">Anxiolytics</td><td class="n">188.8</td></tr><tr class="hi-row"><td class="n">2017</td><td class="n">3</td><td class="">Airway drugs</td><td class="n">157.5</td></tr><tr class=""><td class="n">2018</td><td class="n">1</td><td class="">Paracetamol-type &amp; metamizole-type</td><td class="n">938.6</td></tr><tr class=""><td class="n">2018</td><td class="n">2</td><td class="">Anxiolytics</td><td class="n">272.2</td></tr><tr class="hi-row"><td class="n">2018</td><td class="n">3</td><td class="">Airway drugs</td><td class="n">230.4</td></tr><tr class=""><td class="n">2019</td><td class="n">1</td><td class="">Paracetamol-type &amp; metamizole-type</td><td class="n">857.4</td></tr><tr class=""><td class="n">2019</td><td class="n">2</td><td class="">Anxiolytics</td><td class="n">257.7</td></tr><tr class="hi-row"><td class="n">2019</td><td class="n">3</td><td class="">Airway drugs</td><td class="n">223.7</td></tr></tbody></table></div>
+<p class="chart-title">At a glance: top 3 by year (the #3 slot is highlighted)</p>
+<div class="rankgrid"><div class="yr"><h5>2014</h5><ol><li class=""><span class="rk">#1</span><span class="nm">Paracetamol-type &amp; metamizole-type</span><span class="v">841.2</span></li><li class=""><span class="rk">#2</span><span class="nm">Anxiolytics</span><span class="v">362.9</span></li><li class="third"><span class="rk">#3</span><span class="nm">Aspirin-type</span><span class="v">140.3</span></li></ol></div><div class="yr"><h5>2015</h5><ol><li class=""><span class="rk">#1</span><span class="nm">Paracetamol-type &amp; metamizole-type</span><span class="v">999.8</span></li><li class=""><span class="rk">#2</span><span class="nm">Anxiolytics</span><span class="v">247.1</span></li><li class="third"><span class="rk">#3</span><span class="nm">Diclofenac-type</span><span class="v">158.8</span></li></ol></div><div class="yr"><h5>2016</h5><ol><li class=""><span class="rk">#1</span><span class="nm">Paracetamol-type &amp; metamizole-type</span><span class="v">1119.7</span></li><li class=""><span class="rk">#2</span><span class="nm">Anxiolytics</span><span class="v">273.2</span></li><li class="third airway"><span class="rk">#3</span><span class="nm">Airway drugs</span><span class="v">178.1</span></li></ol></div><div class="yr"><h5>2017</h5><ol><li class=""><span class="rk">#1</span><span class="nm">Paracetamol-type &amp; metamizole-type</span><span class="v">697.7</span></li><li class=""><span class="rk">#2</span><span class="nm">Anxiolytics</span><span class="v">188.8</span></li><li class="third airway"><span class="rk">#3</span><span class="nm">Airway drugs</span><span class="v">157.5</span></li></ol></div><div class="yr"><h5>2018</h5><ol><li class=""><span class="rk">#1</span><span class="nm">Paracetamol-type &amp; metamizole-type</span><span class="v">938.6</span></li><li class=""><span class="rk">#2</span><span class="nm">Anxiolytics</span><span class="v">272.2</span></li><li class="third airway"><span class="rk">#3</span><span class="nm">Airway drugs</span><span class="v">230.4</span></li></ol></div><div class="yr"><h5>2019</h5><ol><li class=""><span class="rk">#1</span><span class="nm">Paracetamol-type &amp; metamizole-type</span><span class="v">857.4</span></li><li class=""><span class="rk">#2</span><span class="nm">Anxiolytics</span><span class="v">257.7</span></li><li class="third airway"><span class="rk">#3</span><span class="nm">Airway drugs</span><span class="v">223.7</span></li></ol></div></div>
+<div class="means"><h4>What it means</h4><ul><li><b>#1 and #2 never change:</b> paracetamol &amp; metamizole, then anxiolytics.</li><li><b>#3 changed hands:</b> aspirin-type (2014) → diclofenac-type (2015) → <b>airway drugs (2016–2019)</b>.</li><li>Airway drugs didn't just grow; they <b>passed the older pain drugs and held #3 for four straight years.</b></li></ul></div>
+</section>
+<section id="q4">
+<p class="eyebrow">Section 5 · Q4</p>
+<h2>Do sales change with the seasons?</h2>
+<p class="why"><span>Why it matters</span> Seasonal patterns help with stock planning and ad timing.</p>
+<p class="method"><b>Method note:</b> Serbia is in the Northern Hemisphere (winter = Dec–Feb). <code>pct_vs_drug_avg</code> compares each season to that drug's own average, so big and small sellers can be compared fairly. All years are pooled to show the typical yearly cycle.</p>
+<details class="sql"><summary>Show SQL</summary><pre><code><span class="c">-- Q4: Seasonal pattern per drug class</span>
+<span class="k">WITH</span> seasonal <span class="k">AS</span> (
+  <span class="k">SELECT</span>
+    d.drug_class,
+    <span class="k">CASE</span>
+      <span class="k">WHEN</span> <span class="f">strftime</span>(<span class="s">&#x27;%m&#x27;</span>, s.datum) <span class="k">IN</span> (<span class="s">&#x27;12&#x27;</span>, <span class="s">&#x27;01&#x27;</span>, <span class="s">&#x27;02&#x27;</span>) <span class="k">THEN</span> <span class="s">&#x27;Winter&#x27;</span>
+      <span class="k">WHEN</span> <span class="f">strftime</span>(<span class="s">&#x27;%m&#x27;</span>, s.datum) <span class="k">IN</span> (<span class="s">&#x27;03&#x27;</span>, <span class="s">&#x27;04&#x27;</span>, <span class="s">&#x27;05&#x27;</span>) <span class="k">THEN</span> <span class="s">&#x27;Spring&#x27;</span>
+      <span class="k">WHEN</span> <span class="f">strftime</span>(<span class="s">&#x27;%m&#x27;</span>, s.datum) <span class="k">IN</span> (<span class="s">&#x27;06&#x27;</span>, <span class="s">&#x27;07&#x27;</span>, <span class="s">&#x27;08&#x27;</span>) <span class="k">THEN</span> <span class="s">&#x27;Summer&#x27;</span>
+      <span class="k">ELSE</span> <span class="s">&#x27;Autumn&#x27;</span>
+    <span class="k">END</span> <span class="k">AS</span> season,
+    <span class="f">AVG</span>(s.units_sold) <span class="k">AS</span> avg_monthly_units
+  <span class="k">FROM</span> sales_clean <span class="k">AS</span> s
+  <span class="k">JOIN</span> drug_names <span class="k">AS</span> d
+    <span class="k">ON</span> s.atc_code = d.atc_code
+  <span class="k">GROUP</span> <span class="k">BY</span> d.drug_class, season
+)
+<span class="k">SELECT</span>
+  drug_class,
+  season,
+  <span class="f">ROUND</span>(avg_monthly_units, 1) <span class="k">AS</span> avg_monthly_units,
+  <span class="f">ROUND</span>(100.0 * (avg_monthly_units - <span class="f">AVG</span>(avg_monthly_units) <span class="k">OVER</span> (<span class="k">PARTITION</span> <span class="k">BY</span> drug_class))
+        / <span class="f">AVG</span>(avg_monthly_units) <span class="k">OVER</span> (<span class="k">PARTITION</span> <span class="k">BY</span> drug_class), 1) <span class="k">AS</span> pct_vs_drug_avg
+<span class="k">FROM</span> seasonal
+<span class="k">ORDER</span> <span class="k">BY</span> drug_class,
+  <span class="k">CASE</span> season <span class="k">WHEN</span> <span class="s">&#x27;Winter&#x27;</span> <span class="k">THEN</span> 1 <span class="k">WHEN</span> <span class="s">&#x27;Spring&#x27;</span> <span class="k">THEN</span> 2 <span class="k">WHEN</span> <span class="s">&#x27;Summer&#x27;</span> <span class="k">THEN</span> 3 <span class="k">ELSE</span> 4 <span class="k">END</span>;</code></pre></details>
+<figure class="viz"><div class="viz-head"><div><p class="viz-title">How each season compares to the drug's own average</p><p class="viz-sub">Above zero = sells more than usual that season. Below zero = sells less.</p></div><button class="replay" type="button">↻ Replay</button></div><div class="viz-host" id="v-q4" style="min-height:330px"></div></figure>
+<details class="long" open><summary>Average monthly units by season, and % vs. each drug's own average (32 rows)</summary><div class="tbl scroll"><table><thead><tr><th class="">drug_class</th><th class="">season</th><th class="n">avg_monthly_units</th><th class="n">pct_vs_drug_avg</th></tr></thead><tbody><tr class=""><td class="">Airway drugs</td><td class="">Winter</td><td class="n">218.5</td><td class="n hi">25.8</td></tr><tr class=""><td class="">Airway drugs</td><td class="">Spring</td><td class="n">184.0</td><td class="n">5.9</td></tr><tr class=""><td class="">Airway drugs</td><td class="">Summer</td><td class="n">106.1</td><td class="n hi">-38.9</td></tr><tr class=""><td class="">Airway drugs</td><td class="">Autumn</td><td class="n">186.4</td><td class="n">7.3</td></tr><tr class=""><td class="">Antihistamines</td><td class="">Winter</td><td class="n">45.5</td><td class="n hi">-47.8</td></tr><tr class=""><td class="">Antihistamines</td><td class="">Spring</td><td class="n">131.6</td><td class="n hi">51.0</td></tr><tr class=""><td class="">Antihistamines</td><td class="">Summer</td><td class="n">106.9</td><td class="n hi">22.6</td></tr><tr class=""><td class="">Antihistamines</td><td class="">Autumn</td><td class="n">64.6</td><td class="n hi">-25.9</td></tr><tr class=""><td class="">Anxiolytics</td><td class="">Winter</td><td class="n">287.2</td><td class="n">6.5</td></tr><tr class=""><td class="">Anxiolytics</td><td class="">Spring</td><td class="n">243.8</td><td class="n">-9.6</td></tr><tr class=""><td class="">Anxiolytics</td><td class="">Summer</td><td class="n">260.5</td><td class="n">-3.4</td></tr><tr class=""><td class="">Anxiolytics</td><td class="">Autumn</td><td class="n">286.8</td><td class="n">6.4</td></tr><tr class=""><td class="">Aspirin-type</td><td class="">Winter</td><td class="n">125.7</td><td class="n">6.2</td></tr><tr class=""><td class="">Aspirin-type</td><td class="">Spring</td><td class="n">117.1</td><td class="n">-1.1</td></tr><tr class=""><td class="">Aspirin-type</td><td class="">Summer</td><td class="n">110.6</td><td class="n">-6.6</td></tr><tr class=""><td class="">Aspirin-type</td><td class="">Autumn</td><td class="n">120.0</td><td class="n">1.4</td></tr><tr class=""><td class="">Diclofenac-type</td><td class="">Winter</td><td class="n">146.3</td><td class="n">-4.8</td></tr><tr class=""><td class="">Diclofenac-type</td><td class="">Spring</td><td class="n">152.0</td><td class="n">-1.1</td></tr><tr class=""><td class="">Diclofenac-type</td><td class="">Summer</td><td class="n">158.7</td><td class="n">3.3</td></tr><tr class=""><td class="">Diclofenac-type</td><td class="">Autumn</td><td class="n">157.7</td><td class="n">2.6</td></tr><tr class=""><td class="">Ibuprofen-type</td><td class="">Winter</td><td class="n">129.9</td><td class="n">8.4</td></tr><tr class=""><td class="">Ibuprofen-type</td><td class="">Spring</td><td class="n">114.7</td><td class="n">-4.3</td></tr><tr class=""><td class="">Ibuprofen-type</td><td class="">Summer</td><td class="n">112.1</td><td class="n">-6.4</td></tr><tr class=""><td class="">Ibuprofen-type</td><td class="">Autumn</td><td class="n">122.4</td><td class="n">2.2</td></tr><tr class=""><td class="">Paracetamol-type &amp; metamizole-type</td><td class="">Winter</td><td class="n">1142.2</td><td class="n hi">23.3</td></tr><tr class=""><td class="">Paracetamol-type &amp; metamizole-type</td><td class="">Spring</td><td class="n">806.5</td><td class="n">-13.0</td></tr><tr class=""><td class="">Paracetamol-type &amp; metamizole-type</td><td class="">Summer</td><td class="n">629.8</td><td class="n hi">-32.0</td></tr><tr class=""><td class="">Paracetamol-type &amp; metamizole-type</td><td class="">Autumn</td><td class="n">1128.4</td><td class="n hi">21.8</td></tr><tr class=""><td class="">Sedatives</td><td class="">Winter</td><td class="n">20.4</td><td class="n">11.6</td></tr><tr class=""><td class="">Sedatives</td><td class="">Spring</td><td class="n">17.9</td><td class="n">-2.3</td></tr><tr class=""><td class="">Sedatives</td><td class="">Summer</td><td class="n">17.2</td><td class="n">-6.2</td></tr><tr class=""><td class="">Sedatives</td><td class="">Autumn</td><td class="n">17.8</td><td class="n">-3.1</td></tr></tbody></table></div></details>
+<p class="chart-title">Seasonal heatmap: % vs. each drug's own average</p>
+<div class="tbl"><table class="heat"><thead><tr><th>Drug class</th><th>Winter</th><th>Spring</th><th>Summer</th><th>Autumn</th></tr></thead><tbody><tr><th scope="row">Airway drugs</th><td style="background: color-mix(in srgb, var(--warm) 48%, var(--surface));" class="strong">+25.8%</td><td style="background: color-mix(in srgb, var(--warm) 15%, var(--surface));" class="">+5.9%</td><td style="background: color-mix(in srgb, var(--cool) 70%, var(--surface));" class="strong">-38.9%</td><td style="background: color-mix(in srgb, var(--warm) 17%, var(--surface));" class="">+7.3%</td></tr><tr><th scope="row">Antihistamines</th><td style="background: color-mix(in srgb, var(--cool) 85%, var(--surface));" class="strong">-47.8%</td><td style="background: color-mix(in srgb, var(--warm) 90%, var(--surface));" class="strong">+51.0%</td><td style="background: color-mix(in srgb, var(--warm) 43%, var(--surface));" class="strong">+22.6%</td><td style="background: color-mix(in srgb, var(--cool) 48%, var(--surface));" class="strong">-25.9%</td></tr><tr><th scope="row">Anxiolytics</th><td style="background: color-mix(in srgb, var(--warm) 16%, var(--surface));" class="">+6.5%</td><td style="background: color-mix(in srgb, var(--cool) 21%, var(--surface));" class="">-9.6%</td><td style="background: color-mix(in srgb, var(--cool) 11%, var(--surface));" class="">-3.4%</td><td style="background: color-mix(in srgb, var(--warm) 16%, var(--surface));" class="">+6.4%</td></tr><tr><th scope="row">Aspirin-type</th><td style="background: color-mix(in srgb, var(--warm) 15%, var(--surface));" class="">+6.2%</td><td style="background: color-mix(in srgb, var(--cool) 7%, var(--surface));" class="">-1.1%</td><td style="background: color-mix(in srgb, var(--cool) 16%, var(--surface));" class="">-6.6%</td><td style="background: color-mix(in srgb, var(--warm) 7%, var(--surface));" class="">+1.4%</td></tr><tr><th scope="row">Diclofenac-type</th><td style="background: color-mix(in srgb, var(--cool) 13%, var(--surface));" class="">-4.8%</td><td style="background: color-mix(in srgb, var(--cool) 7%, var(--surface));" class="">-1.1%</td><td style="background: color-mix(in srgb, var(--warm) 10%, var(--surface));" class="">+3.3%</td><td style="background: color-mix(in srgb, var(--warm) 9%, var(--surface));" class="">+2.6%</td></tr><tr><th scope="row">Ibuprofen-type</th><td style="background: color-mix(in srgb, var(--warm) 19%, var(--surface));" class="">+8.4%</td><td style="background: color-mix(in srgb, var(--cool) 12%, var(--surface));" class="">-4.3%</td><td style="background: color-mix(in srgb, var(--cool) 16%, var(--surface));" class="">-6.4%</td><td style="background: color-mix(in srgb, var(--warm) 9%, var(--surface));" class="">+2.2%</td></tr><tr><th scope="row">Paracetamol-type &amp; metamizole-type</th><td style="background: color-mix(in srgb, var(--warm) 44%, var(--surface));" class="strong">+23.3%</td><td style="background: color-mix(in srgb, var(--cool) 27%, var(--surface));" class="">-13.0%</td><td style="background: color-mix(in srgb, var(--cool) 58%, var(--surface));" class="strong">-32.0%</td><td style="background: color-mix(in srgb, var(--warm) 41%, var(--surface));" class="strong">+21.8%</td></tr><tr><th scope="row">Sedatives</th><td style="background: color-mix(in srgb, var(--warm) 24%, var(--surface));" class="">+11.6%</td><td style="background: color-mix(in srgb, var(--cool) 9%, var(--surface));" class="">-2.3%</td><td style="background: color-mix(in srgb, var(--cool) 15%, var(--surface));" class="">-6.2%</td><td style="background: color-mix(in srgb, var(--cool) 10%, var(--surface));" class="">-3.1%</td></tr></tbody></table></div>
+<p class="legend"><span class="sw sw-warm"></span> above the drug's average &nbsp; <span class="sw sw-cool"></span> below the drug's average &nbsp; Bold = ±20% or more</p>
+<div class="means"><h4>What it means</h4><ul><li><b>Strongly seasonal:</b><ul><li><b>Antihistamines:</b> spring peak (+51%), winter low (−48%), matching pollen season.</li><li><b>Paracetamol &amp; metamizole:</b> winter/autumn high (+22–23%), summer low (−32%), matching cold and flu season.</li><li><b>Airway drugs:</b> winter high (+26%), summer low (−39%).</li></ul></li><li><b>Mostly flat all year (within about ±10%):</b> anxiolytics, sedatives, diclofenac, ibuprofen, aspirin.</li></ul></div>
+</section>
+<section id="part2">
+<p class="eyebrow">Section 6 · Part 2</p>
+<h2>Do weather and Google searches track sales?</h2>
+<p class="why"><span>Why it matters</span> Pharma companies combine sales with outside signals (weather, search trends) to forecast demand.</p>
+
+<h3>Search terms used (Google Trends, Serbia, monthly)</h3>
+<div class="tbl"><table><thead><tr><th>Search term</th><th>English</th><th>Matched to</th></tr></thead><tbody><tr><td>Sciatica (Google Trends <b>Topic</b>)</td><td>Sciatica</td><td>Diclofenac-type, Ibuprofen-type</td></tr><tr><td>grip</td><td>Flu</td><td>Aspirin-type, Paracetamol &amp; metamizole-type</td></tr><tr><td>anksioznost</td><td>Anxiety</td><td>Anxiolytics</td></tr><tr><td>nesanica</td><td>Insomnia</td><td>Sedatives</td></tr><tr><td>astma</td><td>Asthma</td><td>Airway drugs</td></tr><tr><td>alergija</td><td>Allergy</td><td>Antihistamines</td></tr></tbody></table></div>
+<ul class="notes">
+<li>Each term was downloaded <b>separately</b>, so each has its own 0–100 scale. Values are relative interest, not search counts. Each term is compared <b>only to its own drug's sales over time</b>, never to other terms.</li>
+<li>Sciatica is a Topic (it also catches Cyrillic spellings); the others are search terms. Because each was downloaded on its own, this doesn't affect comparisons.</li>
+<li>A product-name term (<code>diklofenak</code>) was tested and <b>replaced</b>, because people often search a drug's name after buying it, which would make the link look stronger than it is.</li>
+</ul>
+
+<h3>Step 1: Combine the Trends tables</h3>
+<details class="sql"><summary>Show SQL</summary><pre><code><span class="c">-- Combine all Google Trends terms into one table (one row per month)</span>
+<span class="k">CREATE</span> <span class="k">VIEW</span> trends <span class="k">AS</span>
+<span class="k">SELECT</span>
+  <span class="f">substr</span>(s.Time, 1, 7) <span class="k">AS</span> month,
+  s.Sciatica     <span class="k">AS</span> sciatica,
+  g.grip         <span class="k">AS</span> flu,
+  a.anksioznost  <span class="k">AS</span> anxiety,
+  n.nesanica     <span class="k">AS</span> insomnia,
+  t.astma        <span class="k">AS</span> asthma,
+  l.alergija     <span class="k">AS</span> allergy
+<span class="k">FROM</span> trends_sciatica <span class="k">AS</span> s
+<span class="k">JOIN</span> trends_grip        <span class="k">AS</span> g <span class="k">ON</span> s.Time = g.Time
+<span class="k">JOIN</span> trends_anksioznost <span class="k">AS</span> a <span class="k">ON</span> s.Time = a.Time
+<span class="k">JOIN</span> trends_nesanica    <span class="k">AS</span> n <span class="k">ON</span> s.Time = n.Time
+<span class="k">JOIN</span> trends_astma       <span class="k">AS</span> t <span class="k">ON</span> s.Time = t.Time
+<span class="k">JOIN</span> trends_alergija    <span class="k">AS</span> l <span class="k">ON</span> s.Time = l.Time;</code></pre></details>
+<p class="result">Checks: all 6 tables have <b>69 rows</b>; <b>0</b> non-numeric (<code>&lt;1</code>) values. First rows:</p>
+<div class="tbl"><table><thead><tr><th class="">month</th><th class="n">sciatica</th><th class="n">flu</th><th class="n">anxiety</th><th class="n">insomnia</th><th class="n">asthma</th><th class="n">allergy</th></tr></thead><tbody><tr class=""><td class="">2014-01</td><td class="n">40</td><td class="n">12</td><td class="n">71</td><td class="n">44</td><td class="n">64</td><td class="n">35</td></tr><tr class=""><td class="">2014-02</td><td class="n">48</td><td class="n">14</td><td class="n">75</td><td class="n">29</td><td class="n">58</td><td class="n">41</td></tr><tr class=""><td class="">2014-03</td><td class="n">52</td><td class="n">14</td><td class="n">73</td><td class="n">26</td><td class="n">69</td><td class="n">46</td></tr><tr class=""><td class="">2014-04</td><td class="n">42</td><td class="n">9</td><td class="n">71</td><td class="n">28</td><td class="n">54</td><td class="n">52</td></tr><tr class=""><td class="">2014-05</td><td class="n">38</td><td class="n">8</td><td class="n">65</td><td class="n">32</td><td class="n">56</td><td class="n">52</td></tr></tbody></table></div>
+
+<h3>Step 2: Daily weather → monthly</h3>
+<details class="sql"><summary>Show SQL</summary><pre><code><span class="c">-- Daily weather → monthly summary (Niš)</span>
+<span class="k">CREATE</span> <span class="k">VIEW</span> weather_monthly <span class="k">AS</span>
+<span class="k">SELECT</span>
+  <span class="f">substr</span>(date, 1, 7)                 <span class="k">AS</span> month,
+  <span class="f">ROUND</span>(<span class="f">AVG</span>(temp_mean), 1)           <span class="k">AS</span> avg_temp,
+  <span class="f">ROUND</span>(<span class="f">AVG</span>(temp_max), 1)            <span class="k">AS</span> avg_temp_max,
+  <span class="f">ROUND</span>(<span class="f">AVG</span>(temp_min), 1)            <span class="k">AS</span> avg_temp_min,
+  <span class="f">ROUND</span>(<span class="f">SUM</span>(precip_mm), 1)           <span class="k">AS</span> total_precip_mm,
+  <span class="f">ROUND</span>(<span class="f">AVG</span>(sunshine_s) / 3600, 1)   <span class="k">AS</span> avg_sunshine_hrs
+<span class="k">FROM</span> weather_daily
+<span class="k">GROUP</span> <span class="k">BY</span> month;</code></pre></details>
+<p class="result">Checks: <b>2,099 days</b> (Jan 1, 2014 – Sep 30, 2019) → <b>69 months</b>.</p>
+<div class="tbl"><table><thead><tr><th class="">month</th><th class="n">avg_temp</th><th class="n">avg_temp_max</th><th class="n">avg_temp_min</th><th class="n">total_precip_mm</th><th class="n">avg_sunshine_hrs</th></tr></thead><tbody><tr class=""><td class="">2014-01</td><td class="n">2.9</td><td class="n">8.3</td><td class="n">-1.2</td><td class="n">30.9</td><td class="n">6.6</td></tr><tr class=""><td class="">2014-02</td><td class="n">5.5</td><td class="n">11.8</td><td class="n">0.5</td><td class="n">7.9</td><td class="n">8.3</td></tr><tr class=""><td class="">2014-03</td><td class="n">9.4</td><td class="n">14.8</td><td class="n">4.1</td><td class="n">57.4</td><td class="n">8.4</td></tr></tbody></table></div>
+<p class="note">Temperature uses AVG (typical day), rain uses SUM (monthly total), sunshine uses average daily hours. Sunshine is model-based and likely <b>overestimated</b>, so it's not used in the analysis.</p>
+
+<h3>Step 3: Join sales + searches + weather</h3>
+<details class="sql"><summary>Show SQL</summary><pre><code><span class="c">-- Combine sales + Google Trends + weather (one row per month per drug class)</span>
+<span class="k">CREATE</span> <span class="k">VIEW</span> sales_covariates <span class="k">AS</span>
+<span class="k">SELECT</span>
+  <span class="f">substr</span>(s.datum, 1, 7) <span class="k">AS</span> month,
+  s.atc_code,
+  d.drug_class,
+  s.units_sold,
+  <span class="k">CASE</span> s.atc_code
+    <span class="k">WHEN</span> <span class="s">&#x27;M01AB&#x27;</span> <span class="k">THEN</span> t.sciatica
+    <span class="k">WHEN</span> <span class="s">&#x27;M01AE&#x27;</span> <span class="k">THEN</span> t.sciatica
+    <span class="k">WHEN</span> <span class="s">&#x27;N02BA&#x27;</span> <span class="k">THEN</span> t.flu
+    <span class="k">WHEN</span> <span class="s">&#x27;N02BE&#x27;</span> <span class="k">THEN</span> t.flu
+    <span class="k">WHEN</span> <span class="s">&#x27;N05B&#x27;</span>  <span class="k">THEN</span> t.anxiety
+    <span class="k">WHEN</span> <span class="s">&#x27;N05C&#x27;</span>  <span class="k">THEN</span> t.insomnia
+    <span class="k">WHEN</span> <span class="s">&#x27;R03&#x27;</span>   <span class="k">THEN</span> t.asthma
+    <span class="k">WHEN</span> <span class="s">&#x27;R06&#x27;</span>   <span class="k">THEN</span> t.allergy
+  <span class="k">END</span> <span class="k">AS</span> search_interest,
+  w.avg_temp,
+  w.total_precip_mm,
+  w.avg_sunshine_hrs
+<span class="k">FROM</span> sales_clean <span class="k">AS</span> s
+<span class="k">JOIN</span> drug_names      <span class="k">AS</span> d <span class="k">ON</span> s.atc_code = d.atc_code
+<span class="k">JOIN</span> trends          <span class="k">AS</span> t <span class="k">ON</span> <span class="f">substr</span>(s.datum, 1, 7) = t.month
+<span class="k">JOIN</span> weather_monthly <span class="k">AS</span> w <span class="k">ON</span> <span class="f">substr</span>(s.datum, 1, 7) = w.month;</code></pre></details>
+<p>Sales dates use the <b>last</b> day of the month and Trends uses the <b>first</b>, so <code>substr(..., 1, 7)</code> keeps only <code>YYYY-MM</code> from both so they match. Result: <b>544 rows</b>.</p>
+<p class="result">Sample (antihistamines):</p>
+<div class="tbl"><table><thead><tr><th class="">month</th><th class="">atc_code</th><th class="">drug_class</th><th class="n">units_sold</th><th class="n">search_interest</th><th class="n">avg_temp</th><th class="n">total_precip_mm</th><th class="n">avg_sunshine_hrs</th></tr></thead><tbody><tr class=""><td class="">2014-01</td><td class="">R06</td><td class="">Antihistamines</td><td class="n">48.2</td><td class="n">35</td><td class="n">2.9</td><td class="n">30.9</td><td class="n">6.6</td></tr><tr class=""><td class="">2014-02</td><td class="">R06</td><td class="">Antihistamines</td><td class="n">36.2</td><td class="n">41</td><td class="n">5.5</td><td class="n">7.9</td><td class="n">8.3</td></tr><tr class=""><td class="">2014-03</td><td class="">R06</td><td class="">Antihistamines</td><td class="n">85.4</td><td class="n">46</td><td class="n">9.4</td><td class="n">57.4</td><td class="n">8.4</td></tr></tbody></table></div>
+
+<h3>Step 4: Correlation (raw values)</h3>
+<aside class="callout">
+<h4>What is correlation (r)?</h4>
+<ul>
+<li>r runs from <b>−1 to +1</b>. Near <b>+1</b> = rise and fall together. Near <b>0</b> = no clear link. Near <b>−1</b> = one goes up when the other goes down.</li>
+<li>With ~66–68 months, <b>|r| above about 0.24</b> is unlikely to be pure chance (rule of thumb: 2 ÷ √n). Treat 0.25–0.30 as borderline; <b>0.4+</b> is more convincing.</li>
+<li>SQLite has no built-in correlation function, so it's calculated with the standard Pearson formula.</li>
+</ul>
+</aside>
+<details class="sql"><summary>Show SQL</summary><pre><code><span class="c">-- Correlation of monthly sales with matching search interest and temperature</span>
+<span class="k">WITH</span> stats <span class="k">AS</span> (
+  <span class="k">SELECT</span>
+    drug_class,
+    <span class="f">COUNT</span>(*)                               <span class="k">AS</span> n,
+    <span class="f">SUM</span>(units_sold)                        <span class="k">AS</span> sx,
+    <span class="f">SUM</span>(units_sold * units_sold)           <span class="k">AS</span> sxx,
+    <span class="f">SUM</span>(search_interest)                   <span class="k">AS</span> sy,
+    <span class="f">SUM</span>(search_interest * search_interest) <span class="k">AS</span> syy,
+    <span class="f">SUM</span>(units_sold * search_interest)      <span class="k">AS</span> sxy,
+    <span class="f">SUM</span>(avg_temp)                          <span class="k">AS</span> st,
+    <span class="f">SUM</span>(avg_temp * avg_temp)               <span class="k">AS</span> stt,
+    <span class="f">SUM</span>(units_sold * avg_temp)             <span class="k">AS</span> sxt
+  <span class="k">FROM</span> sales_covariates
+  <span class="k">GROUP</span> <span class="k">BY</span> drug_class
+)
+<span class="k">SELECT</span>
+  drug_class,
+  n,
+  <span class="f">ROUND</span>((n * sxy - sx * sy) / <span class="f">SQRT</span>((n * sxx - sx * sx) * (n * syy - sy * sy)), 2) <span class="k">AS</span> r_search,
+  <span class="f">ROUND</span>((n * sxt - sx * st) / <span class="f">SQRT</span>((n * sxx - sx * sx) * (n * stt - st * st)), 2) <span class="k">AS</span> r_temp
+<span class="k">FROM</span> stats
+<span class="k">ORDER</span> <span class="k">BY</span> drug_class;</code></pre></details>
+<div class="tbl"><table><thead><tr><th class="">drug_class</th><th class="n">n</th><th class="n">r_search</th><th class="n">r_temp</th></tr></thead><tbody><tr class=""><td class="">Airway drugs</td><td class="n">68</td><td class="n hi">0.48</td><td class="n hi">-0.58</td></tr><tr class=""><td class="">Antihistamines</td><td class="n">68</td><td class="n hi">0.67</td><td class="n hi">0.54</td></tr><tr class=""><td class="">Anxiolytics</td><td class="n">68</td><td class="n">-0.22</td><td class="n">-0.13</td></tr><tr class=""><td class="">Aspirin-type</td><td class="n">68</td><td class="n">0.04</td><td class="n">-0.25</td></tr><tr class=""><td class="">Diclofenac-type</td><td class="n">68</td><td class="n">0.31</td><td class="n">0.18</td></tr><tr class=""><td class="">Ibuprofen-type</td><td class="n">68</td><td class="n">0.04</td><td class="n">-0.27</td></tr><tr class=""><td class="">Paracetamol-type &amp; metamizole-type</td><td class="n">68</td><td class="n">0.25</td><td class="n hi">-0.59</td></tr><tr class=""><td class="">Sedatives</td><td class="n">68</td><td class="n">0.21</td><td class="n">-0.19</td></tr></tbody></table></div>
+
+<h3>What these correlations look like</h3>
+<p>Each dot is one month (68 months). The orange line is the best-fit trend line: if it slopes <b>up</b>, sales rise as the signal rises; if it slopes <b>down</b>, sales fall as the signal rises. The more tightly the dots hug the line, the stronger the link.</p>
+<figure class="viz"><div class="viz-head"><div><p class="viz-title">Monthly sales vs. outside signals</p><p class="viz-sub">Pick a drug class. Hover or tap a dot to see that month.</p></div><button class="replay" type="button">↻ Replay</button></div><div class="drug-picker" role="group" aria-label="Drug class"><button type="button" data-drug="Antihistamines" aria-pressed="true">Antihistamines</button><button type="button" data-drug="Paracetamol-type &amp; metamizole-type" aria-pressed="false">Paracetamol &amp; metamizole</button><button type="button" data-drug="Airway drugs" aria-pressed="false">Airway drugs</button><button type="button" data-drug="Diclofenac-type" aria-pressed="false">Diclofenac-type</button><button type="button" data-drug="Aspirin-type" aria-pressed="false">Aspirin-type</button><button type="button" data-drug="Ibuprofen-type" aria-pressed="false">Ibuprofen-type</button><button type="button" data-drug="Anxiolytics" aria-pressed="false">Anxiolytics</button><button type="button" data-drug="Sedatives" aria-pressed="false">Sedatives</button></div><div class="viz-host" id="v-scatter" style="min-height:330px"></div></figure>
+<p class="note">Dots come from the <code>sales_covariates</code> view above (same data as the r values in the table).</p>
+
+<h3>Step 5: Correlation (month-to-month changes)</h3>
+<p>Raw values can look linked just because both rise over the years (e.g., more people using Google). Comparing <b>changes</b> (“sales went up this month; did searches go up too?”) removes those long-term trends. Feb 2017 is skipped because its previous month (Jan 2017) is missing; the first month is skipped because it has nothing to compare to. So n = 66.</p>
+<details class="sql"><summary>Show SQL</summary><pre><code><span class="c">-- Correlation using month-to-month changes (removes long-term trends)</span>
+<span class="k">WITH</span> changes <span class="k">AS</span> (
+  <span class="k">SELECT</span>
+    drug_class,
+    month,
+    <span class="f">LAG</span>(month) <span class="k">OVER</span> w                             <span class="k">AS</span> prev_month,
+    units_sold      - <span class="f">LAG</span>(units_sold) <span class="k">OVER</span> w      <span class="k">AS</span> d_sales,
+    search_interest - <span class="f">LAG</span>(search_interest) <span class="k">OVER</span> w <span class="k">AS</span> d_search,
+    avg_temp        - <span class="f">LAG</span>(avg_temp) <span class="k">OVER</span> w        <span class="k">AS</span> d_temp
+  <span class="k">FROM</span> sales_covariates
+  <span class="k">WINDOW</span> w <span class="k">AS</span> (<span class="k">PARTITION</span> <span class="k">BY</span> drug_class <span class="k">ORDER</span> <span class="k">BY</span> month)
+),
+clean <span class="k">AS</span> (
+  <span class="k">SELECT</span> *
+  <span class="k">FROM</span> changes
+  <span class="k">WHERE</span> prev_month <span class="k">IS</span> <span class="k">NOT</span> <span class="k">NULL</span>
+    <span class="k">AND</span> <span class="f">date</span>(prev_month || <span class="s">&#x27;-01&#x27;</span>, <span class="s">&#x27;+1 month&#x27;</span>) = month || <span class="s">&#x27;-01&#x27;</span>
+),
+stats <span class="k">AS</span> (
+  <span class="k">SELECT</span>
+    drug_class,
+    <span class="f">COUNT</span>(*)                  <span class="k">AS</span> n,
+    <span class="f">SUM</span>(d_sales)              <span class="k">AS</span> sx,
+    <span class="f">SUM</span>(d_sales * d_sales)    <span class="k">AS</span> sxx,
+    <span class="f">SUM</span>(d_search)             <span class="k">AS</span> sy,
+    <span class="f">SUM</span>(d_search * d_search)  <span class="k">AS</span> syy,
+    <span class="f">SUM</span>(d_sales * d_search)   <span class="k">AS</span> sxy,
+    <span class="f">SUM</span>(d_temp)               <span class="k">AS</span> st,
+    <span class="f">SUM</span>(d_temp * d_temp)      <span class="k">AS</span> stt,
+    <span class="f">SUM</span>(d_sales * d_temp)     <span class="k">AS</span> sxt
+  <span class="k">FROM</span> clean
+  <span class="k">GROUP</span> <span class="k">BY</span> drug_class
+)
+<span class="k">SELECT</span>
+  drug_class,
+  n,
+  <span class="f">ROUND</span>((n * sxy - sx * sy) / <span class="f">SQRT</span>((n * sxx - sx * sx) * (n * syy - sy * sy)), 2) <span class="k">AS</span> r_search_change,
+  <span class="f">ROUND</span>((n * sxt - sx * st) / <span class="f">SQRT</span>((n * sxx - sx * sx) * (n * stt - st * st)), 2) <span class="k">AS</span> r_temp_change
+<span class="k">FROM</span> stats
+<span class="k">ORDER</span> <span class="k">BY</span> drug_class;</code></pre></details>
+<div class="tbl"><table><thead><tr><th class="">drug_class</th><th class="n">n</th><th class="n">r_search_change</th><th class="n">r_temp_change</th></tr></thead><tbody><tr class=""><td class="">Airway drugs</td><td class="n">66</td><td class="n">0.28</td><td class="n hi">-0.42</td></tr><tr class=""><td class="">Antihistamines</td><td class="n">66</td><td class="n hi">0.44</td><td class="n hi">0.42</td></tr><tr class=""><td class="">Anxiolytics</td><td class="n">66</td><td class="n">0.1</td><td class="n">-0.07</td></tr><tr class=""><td class="">Aspirin-type</td><td class="n">66</td><td class="n">0.19</td><td class="n">-0.25</td></tr><tr class=""><td class="">Diclofenac-type</td><td class="n">66</td><td class="n hi">0.42</td><td class="n">0.08</td></tr><tr class=""><td class="">Ibuprofen-type</td><td class="n">66</td><td class="n">0.19</td><td class="n">-0.17</td></tr><tr class=""><td class="">Paracetamol-type &amp; metamizole-type</td><td class="n">66</td><td class="n">-0.03</td><td class="n hi">-0.44</td></tr><tr class=""><td class="">Sedatives</td><td class="n">66</td><td class="n">0.14</td><td class="n">-0.08</td></tr></tbody></table></div>
+
+<div class="feature">
+<h3>Summary: raw vs. month-to-month</h3>
+<p>Each line shows how a link changed once long-term trends were removed: it starts at the <b>raw</b> value (hollow dot) and moves to the <b>month-to-month</b> value (solid dot). Dots inside the gray zone could be chance.</p>
+<figure class="viz"><div class="viz-head"><div><p class="viz-title">Raw → month-to-month correlation</p><p class="viz-sub">Solid dots outside ±0.4 are the most convincing links.</p></div><button class="replay" type="button">↻ Replay</button></div><div class="viz-host" id="v-dumbbell" style="min-height:330px"></div></figure>
+<p class="legend"><span class="sw sw-hi"></span> |r| ≥ 0.4 after removing trends</p>
+<div class="tbl"><table><thead><tr><th>Drug class</th><th class="n">r search (raw → change)</th><th class="n">r temp (raw → change)</th><th>Takeaway</th></tr></thead>
+<tbody><tr><th scope="row">Antihistamines</th><td class="n">0.67 → <span class="hi">0.44</span></td><td class="n">0.54 → <span class="hi">0.42</span></td><td>Strongest, most consistent link</td></tr><tr><th scope="row">Paracetamol &amp; metamizole</th><td class="n">0.25 → <span class="">−0.03</span></td><td class="n">−0.59 → <span class="hi">−0.44</span></td><td>Temperature matters, not flu searches</td></tr><tr><th scope="row">Airway drugs</th><td class="n">0.48 → <span class="">0.28</span></td><td class="n">−0.58 → <span class="hi">−0.42</span></td><td>Temperature holds; search borderline</td></tr><tr><th scope="row">Diclofenac-type</th><td class="n">0.31 → <span class="hi">0.42</span></td><td class="n">0.18 → <span class="">0.08</span></td><td>Sciatica link holds, even stronger</td></tr><tr><th scope="row">Aspirin-type</th><td class="n">0.04 → <span class="">0.19</span></td><td class="n">−0.25 → <span class="">−0.25</span></td><td>No clear search link</td></tr><tr><th scope="row">Ibuprofen-type</th><td class="n">0.04 → <span class="">0.19</span></td><td class="n">−0.27 → <span class="">−0.17</span></td><td>No clear link</td></tr><tr><th scope="row">Anxiolytics</th><td class="n">−0.22 → <span class="">0.10</span></td><td class="n">−0.13 → <span class="">−0.07</span></td><td>Searches don&#x27;t predict sales</td></tr><tr><th scope="row">Sedatives</th><td class="n">0.21 → <span class="">0.14</span></td><td class="n">−0.19 → <span class="">−0.08</span></td><td>Searches don&#x27;t predict sales</td></tr></tbody></table></div>
+</div>
+
+<div class="means"><h4>What it means</h4><ul><li><b>Antihistamines</b> follow allergy searches and warm weather, even after removing trends.</li><li><b>Paracetamol &amp; metamizole</b> and <b>airway drugs</b> sell more when it's <b>cold</b>. For paracetamol &amp; metamizole, <b>temperature is a better signal than flu searches</b>.</li><li><b>Diclofenac-type</b> follows Sciatica searches month to month (the link got stronger after removing trends).</li><li><b>Prescription drugs</b> (anxiolytics, sedatives) don't follow searches, which makes sense since they need a doctor's prescription.</li><li><b>Business use:</b> for seasonal drug classes, weather and search data could help plan stock and time ads.</li></ul></div>
+</section>
+<section id="limits">
+<p class="eyebrow">Section 7</p>
+<h2>Limitations</h2>
+<ul>
+<li><b>One pharmacy in Serbia</b>, used as a proxy since public Philippine pharmacy sales data isn't available. Results show <b>methods</b>, not the Philippine market.</li>
+<li><b>Data is from 2014–2019</b>, so findings aren't current market trends.</li>
+<li><b>Excluded months:</b> Oct 2019 (partial) and Jan 2017 (missing, 1 unit recorded).</li>
+<li><b>2017 was lower for all classes</b>, likely a store-level issue the data can't explain.</li>
+<li><b>2019 covers Jan–Sep only</b>, which can skew yearly averages for seasonal drugs.</li>
+<li><b>Correlation is not causation.</b> Temperature and searches are both seasonal, so part of the links may reflect seasons in general.</li>
+<li><b>Google Trends</b> values are relative (0–100 per term), not search counts. Terms were downloaded separately and are never compared with each other.</li>
+<li><b>Sunshine data</b> is model-based and likely overestimated, so it was not used.</li>
+<li>The rough significance cutoff (|r| ≈ 0.24) assumes independent months; real monthly data is somewhat linked month to month, so borderline values should be read with care.</li>
+</ul>
+</section>
+</main>
+<footer><div class="wrap">Built with SQLite (DB Browser for SQLite). Data: Kaggle Pharma Sales Data, Google Trends, Open-Meteo Historical Weather API.</div></footer>
+<script>(function () {
+  const DATA = {"step4":[["2016-07-31",1609],["2016-08-31",1700],["2016-09-30",2050],["2016-10-31",2710],["2016-11-30",1963],["2016-12-31",2646],["2017-01-31",1],["2017-02-28",1165],["2017-03-31",1407],["2017-04-30",1370],["2017-05-31",1369],["2017-06-30",1327],["2017-07-31",1261],["2017-08-31",1302],["2017-09-30",1661],["2017-10-31",2050],["2017-11-30",1706],["2017-12-31",1887],["2018-01-31",1986],["2018-02-28",2203],["2018-03-31",2157],["2018-04-30",1934],["2018-05-31",1675],["2018-06-30",1414]],"q2":{"Airway drugs":[["2014",106.4,null],["2015",148.0,39.1],["2016",178.1,20.3],["2017",157.5,-11.6],["2018",230.4,46.3],["2019",223.7,-2.9]],"Antihistamines":[["2014",69.0,null],["2015",81.9,18.7],["2016",88.8,8.3],["2017",83.6,-5.8],["2018",99.7,19.3],["2019",118.0,18.4]],"Anxiolytics":[["2014",362.9,null],["2015",247.1,-31.9],["2016",273.2,10.6],["2017",188.8,-30.9],["2018",272.2,44.2],["2019",257.7,-5.3]],"Aspirin-type":[["2014",140.3,null],["2015",134.1,-4.4],["2016",138.7,3.5],["2017",99.2,-28.5],["2018",93.6,-5.6],["2019",95.5,1.9]],"Diclofenac-type":[["2014",125.9,null],["2015",158.8,26.1],["2016",177.1,11.5],["2017",150.3,-15.1],["2018",148.9,-1.0],["2019",163.7,9.9]],"Ibuprofen-type":[["2014",111.1,null],["2015",124.7,12.2],["2016",133.7,7.2],["2017",110.4,-17.4],["2018",115.8,4.9],["2019",120.0,3.6]],"Paracetamol-type & metamizole-type":[["2014",841.2,null],["2015",999.8,18.8],["2016",1119.7,12.0],["2017",697.7,-37.7],["2018",938.6,34.5],["2019",857.4,-8.7]],"Sedatives":[["2014",25.3,null],["2015",13.3,-47.5],["2016",17.3,30.2],["2017",12.9,-25.2],["2018",20.2,56.2],["2019",21.0,4.1]]},"q4":{"Airway drugs":[[218.5,25.8],[184.0,5.9],[106.1,-38.9],[186.4,7.3]],"Antihistamines":[[45.5,-47.8],[131.6,51.0],[106.9,22.6],[64.6,-25.9]],"Anxiolytics":[[287.2,6.5],[243.8,-9.6],[260.5,-3.4],[286.8,6.4]],"Aspirin-type":[[125.7,6.2],[117.1,-1.1],[110.6,-6.6],[120.0,1.4]],"Diclofenac-type":[[146.3,-4.8],[152.0,-1.1],[158.7,3.3],[157.7,2.6]],"Ibuprofen-type":[[129.9,8.4],[114.7,-4.3],[112.1,-6.4],[122.4,2.2]],"Paracetamol-type & metamizole-type":[[1142.2,23.3],[806.5,-13.0],[629.8,-32.0],[1128.4,21.8]],"Sedatives":[[20.4,11.6],[17.9,-2.3],[17.2,-6.2],[17.8,-3.1]]},"seasons":["Winter","Spring","Summer","Autumn"],"q4Highlight":["Antihistamines","Paracetamol-type & metamizole-type","Airway drugs"],"short":{"Airway drugs":"Airway drugs","Antihistamines":"Antihistamines","Anxiolytics":"Anxiolytics","Aspirin-type":"Aspirin-type","Diclofenac-type":"Diclofenac-type","Ibuprofen-type":"Ibuprofen-type","Paracetamol-type & metamizole-type":"Paracetamol & metamizole","Sedatives":"Sedatives"},"tiny":{"Airway drugs":"Airway","Antihistamines":"Antihistamines","Anxiolytics":"Anxiolytics","Aspirin-type":"Aspirin","Diclofenac-type":"Diclofenac","Ibuprofen-type":"Ibuprofen","Paracetamol-type & metamizole-type":"Paracetamol & met.","Sedatives":"Sedatives"},"terms":{"Diclofenac-type":"“Sciatica” searches (Topic)","Ibuprofen-type":"“Sciatica” searches (Topic)","Aspirin-type":"searches for “grip” (flu)","Paracetamol-type & metamizole-type":"searches for “grip” (flu)","Anxiolytics":"searches for “anksioznost” (anxiety)","Sedatives":"searches for “nesanica” (insomnia)","Airway drugs":"searches for “astma” (asthma)","Antihistamines":"searches for “alergija” (allergy)"},"order":["Antihistamines","Paracetamol-type & metamizole-type","Airway drugs","Diclofenac-type","Aspirin-type","Ibuprofen-type","Anxiolytics","Sedatives"],"r":{"Airway drugs":{"search":[0.48,0.28],"temp":[-0.58,-0.42]},"Antihistamines":{"search":[0.67,0.44],"temp":[0.54,0.42]},"Anxiolytics":{"search":[-0.22,0.1],"temp":[-0.13,-0.07]},"Aspirin-type":{"search":[0.04,0.19],"temp":[-0.25,-0.25]},"Diclofenac-type":{"search":[0.31,0.42],"temp":[0.18,0.08]},"Ibuprofen-type":{"search":[0.04,0.19],"temp":[-0.27,-0.17]},"Paracetamol-type & metamizole-type":{"search":[0.25,-0.03],"temp":[-0.59,-0.44]},"Sedatives":{"search":[0.21,0.14],"temp":[-0.19,-0.08]}},"takeaway":{"Antihistamines":"Strongest, most consistent link","Paracetamol-type & metamizole-type":"Temperature matters, not flu searches","Airway drugs":"Temperature holds; search borderline","Diclofenac-type":"Sciatica link holds, even stronger","Aspirin-type":"No clear search link","Ibuprofen-type":"No clear link","Anxiolytics":"Searches don't predict sales","Sedatives":"Searches don't predict sales"},"scatter":{"Airway drugs":[["2014-01",112.0,64,2.9],["2014-02",122.0,58,5.5],["2014-03",112.0,69,9.4],["2014-04",97.0,54,12.3],["2014-05",107.0,56,15.7],["2014-06",57.0,50,20.3],["2014-07",61.0,66,22.7],["2014-08",37.0,50,22.7],["2014-09",115.0,72,17.8],["2014-10",182.0,68,12.2],["2014-11",112.0,68,8.2],["2014-12",163.0,71,1.9],["2015-01",177.25,68,0.4],["2015-02",208.0,71,2.9],["2015-03",195.0,74,5.8],["2015-04",97.0,74,10.9],["2015-05",100.0,91,18.4],["2015-06",193.0,79,20.5],["2015-07",60.0,51,26.2],["2015-08",45.0,41,25.6],["2015-09",91.0,68,20.6],["2015-10",184.0,74,12.2],["2015-11",195.0,74,7.7],["2015-12",231.0,70,3.6],["2016-01",174.0,73,-0.4],["2016-02",245.0,50,7.5],["2016-03",253.0,70,7.8],["2016-04",216.0,100,14.7],["2016-05",131.0,66,15.9],["2016-06",127.0,56,22.4],["2016-07",109.0,58,24.1],["2016-08",116.0,40,22.5],["2016-09",121.0,61,19.0],["2016-10",220.0,64,11.1],["2016-11",150.0,69,6.0],["2016-12",275.0,74,0.5],["2017-02",117.0,66,3.3],["2017-03",139.0,77,9.0],["2017-04",209.0,72,10.6],["2017-05",128.0,63,15.7],["2017-06",163.0,50,21.9],["2017-07",115.0,49,23.6],["2017-08",75.0,47,23.2],["2017-09",139.0,62,18.0],["2017-10",247.0,63,11.9],["2017-11",196.0,75,6.4],["2017-12",204.0,64,3.2],["2018-01",219.0,71,2.5],["2018-02",253.0,63,2.0],["2018-03",269.0,76,5.8],["2018-04",229.0,69,15.3],["2018-05",192.0,61,18.2],["2018-06",101.0,54,20.0],["2018-07",90.0,56,21.0],["2018-08",159.0,51,22.5],["2018-09",205.0,72,17.6],["2018-10",353.0,75,13.8],["2018-11",311.0,65,7.1],["2018-12",384.0,81,0.9],["2019-01",386.0,79,-1.0],["2019-02",226.0,72,3.0],["2019-03",257.0,68,8.2],["2019-04",259.0,63,12.4],["2019-05",322.0,68,14.6],["2019-06",142.0,64,21.8],["2019-07",115.0,50,22.4],["2019-08",145.0,73,23.4],["2019-09",161.0,69,18.8]],"Antihistamines":[["2014-01",48.2,35,2.9],["2014-02",36.2,41,5.5],["2014-03",85.4,46,9.4],["2014-04",73.7,52,12.3],["2014-05",123.7,52,15.7],["2014-06",109.3,56,20.3],["2014-07",69.1,49,22.7],["2014-08",70.8,70,22.7],["2014-09",58.8,50,17.8],["2014-10",74.5,42,12.2],["2014-11",45.2,41,8.2],["2014-12",33.4,34,1.9],["2015-01",42.0,41,0.4],["2015-02",47.0,39,2.9],["2015-03",54.0,48,5.8],["2015-04",112.0,60,10.9],["2015-05",159.5,72,18.4],["2015-06",125.8,64,20.5],["2015-07",130.3,62,26.2],["2015-08",83.7,54,25.6],["2015-09",71.0,60,20.6],["2015-10",72.0,41,12.2],["2015-11",44.0,45,7.7],["2015-12",41.73,38,3.6],["2016-01",56.5,46,-0.4],["2016-02",58.0,48,7.5],["2016-03",97.84,51,7.8],["2016-04",162.4,77,14.7],["2016-05",137.1,54,15.9],["2016-06",134.8,65,22.4],["2016-07",116.83,63,24.1],["2016-08",85.3,70,22.5],["2016-09",69.3,68,19.0],["2016-10",60.9,46,11.1],["2016-11",51.2,46,6.0],["2016-12",34.9,48,0.5],["2017-02",30.6,48,3.3],["2017-03",100.1,59,9.0],["2017-04",122.4,65,10.6],["2017-05",161.81,64,15.7],["2017-06",151.9,76,21.9],["2017-07",81.1,65,23.6],["2017-08",60.1,80,23.2],["2017-09",66.9,68,18.0],["2017-10",51.0,43,11.9],["2017-11",46.6,46,6.4],["2017-12",47.1,49,3.2],["2018-01",49.5,52,2.5],["2018-02",39.06,52,2.0],["2018-03",85.5,61,5.8],["2018-04",197.1,90,15.3],["2018-05",213.04,81,18.2],["2018-06",120.8,64,20.0],["2018-07",122.2,72,21.0],["2018-08",103.1,100,22.5],["2018-09",88.1,73,17.6],["2018-10",76.9,50,13.8],["2018-11",48.4,55,7.1],["2018-12",53.1,47,0.9],["2019-01",41.3,48,-1.0],["2019-02",69.5,54,3.0],["2019-03",169.5,68,8.2],["2019-04",179.1,67,12.4],["2019-05",135.4,66,14.6],["2019-06",156.04,76,21.8],["2019-07",105.2,71,22.4],["2019-08",97.3,99,23.4],["2019-09",109.1,72,18.8]],"Anxiolytics":[["2014-01",354.0,71,2.9],["2014-02",347.0,75,5.5],["2014-03",232.0,73,9.4],["2014-04",209.0,71,12.3],["2014-05",270.0,65,15.7],["2014-06",323.0,71,20.3],["2014-07",348.0,66,22.7],["2014-08",420.0,73,22.7],["2014-09",399.0,70,17.8],["2014-10",472.0,62,12.2],["2014-11",489.0,64,8.2],["2014-12",492.0,64,1.9],["2015-01",463.0,71,0.4],["2015-02",243.0,68,2.9],["2015-03",208.0,79,5.8],["2015-04",192.0,75,10.9],["2015-05",194.0,76,18.4],["2015-06",217.0,72,20.5],["2015-07",203.0,74,26.2],["2015-08",265.5,73,25.6],["2015-09",243.5,70,20.6],["2015-10",222.0,82,12.2],["2015-11",228.0,72,7.7],["2015-12",286.0,72,3.6],["2016-01",248.0,70,-0.4],["2016-02",239.0,73,7.5],["2016-03",250.0,86,7.8],["2016-04",318.0,70,14.7],["2016-05",275.0,72,15.9],["2016-06",311.0,71,22.4],["2016-07",240.0,70,24.1],["2016-08",275.5,63,22.5],["2016-09",307.0,91,19.0],["2016-10",312.0,82,11.1],["2016-11",246.0,80,6.0],["2016-12",257.0,70,0.5],["2017-02",144.0,84,3.3],["2017-03",165.0,81,9.0],["2017-04",132.0,68,10.6],["2017-05",148.0,75,15.7],["2017-06",163.0,71,21.9],["2017-07",219.0,72,23.6],["2017-08",239.0,76,23.2],["2017-09",223.0,85,18.0],["2017-10",226.0,87,11.9],["2017-11",192.0,89,6.4],["2017-12",226.0,81,3.2],["2018-01",229.0,87,2.5],["2018-02",268.0,95,2.0],["2018-03",381.0,100,5.8],["2018-04",289.0,92,15.3],["2018-05",259.0,89,18.2],["2018-06",248.0,76,20.0],["2018-07",283.0,88,21.0],["2018-08",253.0,84,22.5],["2018-09",263.0,80,17.6],["2018-10",287.0,86,13.8],["2018-11",252.2,87,7.1],["2018-12",254.0,86,0.9],["2019-01",295.2,86,-1.0],["2019-02",249.4,94,3.0],["2019-03",301.4,95,8.2],["2019-04",299.4,86,12.4],["2019-05",265.8,96,14.6],["2019-06",193.0,81,21.8],["2019-07",250.6,81,22.4],["2019-08",237.0,88,23.4],["2019-09",227.8,80,18.8]],"Aspirin-type":[["2014-01",152.1,12,2.9],["2014-02",177.0,14,5.5],["2014-03",147.66,14,9.4],["2014-04",130.9,9,12.3],["2014-05",132.1,8,15.7],["2014-06",122.9,8,20.3],["2014-07",129.3,7,22.7],["2014-08",123.8,8,22.7],["2014-09",122.1,9,17.8],["2014-10",191.6,11,12.2],["2014-11",142.7,11,8.2],["2014-12",111.12,10,1.9],["2015-01",141.0,14,0.4],["2015-02",131.83,18,2.9],["2015-03",133.8,44,5.8],["2015-04",122.1,12,10.9],["2015-05",136.04,9,18.4],["2015-06",145.46,7,20.5],["2015-07",125.5,7,26.2],["2015-08",133.4,7,25.6],["2015-09",110.4,9,20.6],["2015-10",146.2,12,12.2],["2015-11",145.9,10,7.7],["2015-12",137.0,10,3.6],["2016-01",172.5,12,-0.4],["2016-02",134.2,15,7.5],["2016-03",148.4,16,7.8],["2016-04",147.7,11,14.7],["2016-05",130.55,8,15.9],["2016-06",117.75,7,22.4],["2016-07",137.9,8,24.1],["2016-08",132.7,8,22.5],["2016-09",116.7,8,19.0],["2016-10",160.15,11,11.1],["2016-11",133.85,13,6.0],["2016-12",132.4,27,0.5],["2017-02",97.0,13,3.3],["2017-03",107.35,11,9.0],["2017-04",100.5,10,10.6],["2017-05",98.95,8,15.7],["2017-06",119.6,7,21.9],["2017-07",75.2,7,23.6],["2017-08",84.4,6,23.2],["2017-09",88.15,11,18.0],["2017-10",100.4,12,11.9],["2017-11",104.45,11,6.4],["2017-12",115.15,11,3.2],["2018-01",101.15,19,2.5],["2018-02",114.65,25,2.0],["2018-03",122.3,13,5.8],["2018-04",84.6,8,15.3],["2018-05",89.4,10,18.2],["2018-06",86.8,6,20.0],["2018-07",87.2,8,21.0],["2018-08",88.25,8,22.5],["2018-09",86.5,11,17.6],["2018-10",76.05,13,13.8],["2018-11",102.15,10,7.1],["2018-12",84.75,11,0.9],["2019-01",99.7,21,-1.0],["2019-02",110.2,100,3.0],["2019-03",83.35,17,8.2],["2019-04",88.1,9,12.4],["2019-05",104.1,8,14.6],["2019-06",103.2,7,21.8],["2019-07",92.8,7,22.4],["2019-08",84.2,8,23.4],["2019-09",93.5,9,18.8]],"Diclofenac-type":[["2014-01",127.69,40,2.9],["2014-02",133.32,48,5.5],["2014-03",137.44,52,9.4],["2014-04",113.1,42,12.3],["2014-05",101.79,38,15.7],["2014-06",112.07,48,20.3],["2014-07",117.06,45,22.7],["2014-08",134.79,40,22.7],["2014-09",108.78,44,17.8],["2014-10",154.75,58,12.2],["2014-11",138.08,45,8.2],["2014-12",131.9,56,1.9],["2015-01",135.91,54,0.4],["2015-02",115.71,57,2.9],["2015-03",156.04,53,5.8],["2015-04",154.5,52,10.9],["2015-05",160.02,53,18.4],["2015-06",151.87,54,20.5],["2015-07",175.61,55,26.2],["2015-08",181.69,56,25.6],["2015-09",166.22,56,20.6],["2015-10",195.81,62,12.2],["2015-11",152.78,56,7.7],["2015-12",159.46,60,3.6],["2016-01",171.65,57,-0.4],["2016-02",173.81,60,7.5],["2016-03",156.64,51,7.8],["2016-04",166.61,58,14.7],["2016-05",167.36,60,15.9],["2016-06",169.67,56,22.4],["2016-07",203.97,62,24.1],["2016-08",211.13,65,22.5],["2016-09",172.96,63,19.0],["2016-10",186.76,68,11.1],["2016-11",175.18,81,6.0],["2016-12",169.32,68,0.5],["2017-02",139.69,73,3.3],["2017-03",162.85,81,9.0],["2017-04",155.61,76,10.6],["2017-05",143.66,85,15.7],["2017-06",122.33,73,21.9],["2017-07",159.67,66,23.6],["2017-08",170.15,78,23.2],["2017-09",138.33,79,18.0],["2017-10",137.64,70,11.9],["2017-11",163.85,84,6.4],["2017-12",160.01,74,3.2],["2018-01",132.28,82,2.5],["2018-02",128.36,82,2.0],["2018-03",146.16,91,5.8],["2018-04",170.02,82,15.3],["2018-05",160.52,84,18.2],["2018-06",141.18,69,20.0],["2018-07",150.18,89,21.0],["2018-08",140.0,91,22.5],["2018-09",153.52,87,17.6],["2018-10",144.71,83,13.8],["2018-11",172.29,88,7.1],["2018-12",147.71,95,0.9],["2019-01",179.7,100,-1.0],["2019-02",133.73,80,3.0],["2019-03",154.52,92,8.2],["2019-04",161.39,85,12.4],["2019-05",168.04,87,14.6],["2019-06",151.54,72,21.8],["2019-07",181.0,84,22.4],["2019-08",181.91,94,23.4],["2019-09",161.07,73,18.8]],"Ibuprofen-type":[["2014-01",99.09,40,2.9],["2014-02",126.05,48,5.5],["2014-03",92.95,52,9.4],["2014-04",89.48,42,12.3],["2014-05",119.93,38,15.7],["2014-06",94.71,48,20.3],["2014-07",95.01,45,22.7],["2014-08",99.78,40,22.7],["2014-09",109.09,44,17.8],["2014-10",185.24,58,12.2],["2014-11",100.86,45,8.2],["2014-12",121.4,56,1.9],["2015-01",130.35,54,0.4],["2015-02",123.74,57,2.9],["2015-03",129.39,53,5.8],["2015-04",101.11,52,10.9],["2015-05",119.12,53,18.4],["2015-06",113.69,54,20.5],["2015-07",113.81,55,26.2],["2015-08",144.52,56,25.6],["2015-09",134.12,56,20.6],["2015-10",127.23,62,12.2],["2015-11",128.23,56,7.7],["2015-12",131.29,60,3.6],["2016-01",128.4,57,-0.4],["2016-02",137.53,60,7.5],["2016-03",180.59,51,7.8],["2016-04",146.53,58,14.7],["2016-05",120.86,60,15.9],["2016-06",114.96,56,22.4],["2016-07",141.02,62,24.1],["2016-08",114.37,65,22.5],["2016-09",126.22,63,19.0],["2016-10",142.06,68,11.1],["2016-11",116.85,81,6.0],["2016-12",135.06,68,0.5],["2017-02",103.52,73,3.3],["2017-03",111.06,81,9.0],["2017-04",101.22,76,10.6],["2017-05",118.13,85,15.7],["2017-06",103.01,73,21.9],["2017-07",116.21,66,23.6],["2017-08",112.47,78,23.2],["2017-09",118.71,79,18.0],["2017-10",88.74,70,11.9],["2017-11",119.78,84,6.4],["2017-12",121.66,74,3.2],["2018-01",109.45,82,2.5],["2018-02",132.8,82,2.0],["2018-03",111.76,91,5.8],["2018-04",107.72,82,15.3],["2018-05",103.52,84,18.2],["2018-06",114.23,69,20.0],["2018-07",132.55,89,21.0],["2018-08",114.72,91,22.5],["2018-09",114.99,87,17.6],["2018-10",129.4,83,13.8],["2018-11",105.49,88,7.1],["2018-12",113.02,95,0.9],["2019-01",222.35,100,-1.0],["2019-02",142.16,80,3.0],["2019-03",113.12,92,8.2],["2019-04",100.17,85,12.4],["2019-05",97.26,87,14.6],["2019-06",101.63,72,21.8],["2019-07",103.54,84,22.4],["2019-08",88.27,94,23.4],["2019-09",111.44,73,18.8]],"Paracetamol-type & metamizole-type":[["2014-01",878.03,12,2.9],["2014-02",1001.9,14,5.5],["2014-03",779.27,14,9.4],["2014-04",698.5,9,12.3],["2014-05",628.78,8,15.7],["2014-06",548.23,8,20.3],["2014-07",491.9,7,22.7],["2014-08",583.85,8,22.7],["2014-09",887.82,9,17.8],["2014-10",1856.81,11,12.2],["2014-11",723.8,11,8.2],["2014-12",1015.66,10,1.9],["2015-01",1044.24,14,0.4],["2015-02",953.25,18,2.9],["2015-03",1084.85,44,5.8],["2015-04",940.17,12,10.9],["2015-05",765.9,9,18.4],["2015-06",746.79,7,20.5],["2015-07",708.83,7,26.2],["2015-08",790.79,7,25.6],["2015-09",852.12,9,20.6],["2015-10",1574.34,12,12.2],["2015-11",1277.72,10,7.7],["2015-12",1258.35,10,3.6],["2016-01",1476.32,12,-0.4],["2016-02",1224.86,15,7.5],["2016-03",1150.7,16,7.8],["2016-04",998.34,11,14.7],["2016-05",997.15,8,15.9],["2016-06",760.05,7,22.4],["2016-07",652.36,8,24.1],["2016-08",753.05,8,22.5],["2016-09",1118.7,8,19.0],["2016-10",1617.28,11,11.1],["2016-11",1062.69,13,6.0],["2016-12",1624.34,27,0.5],["2017-02",526.35,13,3.3],["2017-03",612.5,11,9.0],["2017-04",540.2,10,10.6],["2017-05",547.94,8,15.7],["2017-06",496.1,7,21.9],["2017-07",479.35,7,23.6],["2017-08",549.3,6,23.2],["2017-09",863.75,11,18.0],["2017-10",1184.35,12,11.9],["2017-11",867.9,11,6.4],["2017-12",1007.18,11,3.2],["2018-01",1134.33,19,2.5],["2018-02",1255.37,25,2.0],["2018-03",999.12,13,5.8],["2018-04",836.04,8,15.3],["2018-05",644.65,10,18.2],["2018-06",584.34,6,20.0],["2018-07",679.35,8,21.0],["2018-08",733.84,8,22.5],["2018-09",1058.26,11,17.6],["2018-10",1129.27,13,13.8],["2018-11",995.15,10,7.1],["2018-12",1213.95,11,0.9],["2019-01",1660.61,21,-1.0],["2019-02",1001.21,100,3.0],["2019-03",941.05,17,8.2],["2019-04",647.65,9,12.4],["2019-05",703.56,8,14.6],["2019-06",610.0,7,21.8],["2019-07",649.8,7,22.4],["2019-08",518.1,8,23.4],["2019-09",984.48,9,18.8]],"Sedatives":[["2014-01",50.0,44,2.9],["2014-02",31.0,29,5.5],["2014-03",20.0,26,9.4],["2014-04",18.0,28,12.3],["2014-05",23.0,32,15.7],["2014-06",23.0,100,20.3],["2014-07",21.0,94,22.7],["2014-08",29.0,71,22.7],["2014-09",14.0,49,17.8],["2014-10",30.0,45,12.2],["2014-11",19.0,48,8.2],["2014-12",25.0,38,1.9],["2015-01",24.0,47,0.4],["2015-02",9.0,29,2.9],["2015-03",13.0,31,5.8],["2015-04",5.0,29,10.9],["2015-05",10.0,29,18.4],["2015-06",12.0,30,20.5],["2015-07",6.0,29,26.2],["2015-08",15.0,22,25.6],["2015-09",11.0,29,20.6],["2015-10",8.0,25,12.2],["2015-11",18.0,26,7.7],["2015-12",28.0,37,3.6],["2016-01",24.0,38,-0.4],["2016-02",20.0,28,7.5],["2016-03",13.0,25,7.8],["2016-04",18.0,29,14.7],["2016-05",18.0,30,15.9],["2016-06",20.0,48,22.4],["2016-07",8.0,29,24.1],["2016-08",12.0,24,22.5],["2016-09",18.0,22,19.0],["2016-10",11.0,29,11.1],["2016-11",27.0,25,6.0],["2016-12",18.0,32,0.5],["2017-02",7.0,29,3.3],["2017-03",9.0,24,9.0],["2017-04",9.0,16,10.6],["2017-05",23.0,33,15.7],["2017-06",8.0,28,21.9],["2017-07",15.0,29,23.6],["2017-08",12.0,28,23.2],["2017-09",23.0,24,18.0],["2017-10",15.0,23,11.9],["2017-11",15.0,28,6.4],["2017-12",6.0,38,3.2],["2018-01",11.0,37,2.5],["2018-02",12.0,25,2.0],["2018-03",42.0,23,5.8],["2018-04",21.0,30,15.3],["2018-05",13.0,22,18.2],["2018-06",18.0,25,20.0],["2018-07",19.0,24,21.0],["2018-08",20.0,25,22.5],["2018-09",12.0,21,17.6],["2018-10",25.0,22,13.8],["2018-11",22.0,25,7.1],["2018-12",27.0,26,0.9],["2019-01",23.0,29,-1.0],["2019-02",12.0,26,3.0],["2019-03",19.0,25,8.2],["2019-04",22.0,20,12.4],["2019-05",26.0,24,14.6],["2019-06",25.0,21,21.8],["2019-07",20.0,17,22.4],["2019-08",26.0,25,23.4],["2019-09",16.0,25,18.8]]}};
+  const NS = "http://www.w3.org/2000/svg";
+  const reduce = false; // always animate, even with the OS "Reduce motion" setting on
+  const MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const monthName = (ym) => MON[+ym.slice(5, 7) - 1] + " " + ym.slice(0, 4);
+
+  // ---------- tiny SVG helpers ----------
+  function s(tag, attrs, parent) {
+    const n = document.createElementNS(NS, tag);
+    for (const k in attrs) n.setAttribute(k, attrs[k]);
+    if (parent) parent.appendChild(n);
+    return n;
+  }
+  function txt(parent, x, y, str, attrs) {
+    const t = s("text", Object.assign({ x, y }, attrs || {}), parent);
+    t.textContent = str;
+    return t;
+  }
+  const lin = (d0, d1, r0, r1) => (v) => r0 + ((v - d0) / (d1 - d0)) * (r1 - r0);
+  function ticks(lo, hi, n) {
+    const raw = (hi - lo) / n, mag = Math.pow(10, Math.floor(Math.log10(raw))), e = raw / mag;
+    const step = (e >= 7.5 ? 10 : e >= 3.5 ? 5 : e >= 1.5 ? 2 : 1) * mag;
+    const a = Math.floor(lo / step) * step, b = Math.ceil(hi / step) * step, t = [];
+    for (let v = a; v <= b + step / 1e6; v += step) t.push(+v.toFixed(6));
+    return { t, lo: a, hi: b };
+  }
+  const fmtK = (v) => (Math.abs(v) >= 1000 ? v / 1000 + "K" : String(v));
+  const fmtR = (v) => (v < 0 ? "−" : "") + Math.abs(v).toFixed(2);
+  const signed = (v) => (v > 0 ? "+" : v < 0 ? "−" : "") + Math.abs(v).toFixed(1);
+  function svgFor(host, W, H, label) {
+    return s("svg", { viewBox: `0 0 ${W} ${H}`, width: W, height: H, role: "img", "aria-label": label }, host);
+  }
+  function barPath(x, y, w, h, r) {
+    r = Math.min(r, h, w / 2);
+    return `M${x},${y + h}V${y + r}Q${x},${y} ${x + r},${y}H${x + w - r}Q${x + w},${y} ${x + w},${y + r}V${y + h}Z`;
+  }
+  function yAxis(svg, ys, tk, x0, x1, fmt) {
+    for (const v of tk.t) {
+      s("line", { x1: x0, x2: x1, y1: ys(v), y2: ys(v), class: v === 0 ? "axis" : "grid" }, svg);
+      txt(svg, x0 - 6, ys(v) + 4, (fmt || fmtK)(v), { class: "tick", "text-anchor": "end" });
+    }
+  }
+
+  // ---------- animation: prepare hidden state, play when scrolled into view ----------
+  function Anim(on) { this.on = on && !reduce; this.items = []; }
+  Anim.prototype.add = function (k, p, d, dur, extra) { if (this.on) this.items.push({ k, p, d: d || 0, dur: dur || 700, extra }); return p; };
+  Anim.prototype.line = function (p, d, dur) { return this.add("line", p, d, dur || 1000); };
+  Anim.prototype.fade = function (p, d, dur) { return this.add("fade", p, d, dur || 400); };
+  Anim.prototype.grow = function (p, d, dur) { return this.add("grow", p, d, dur || 600); };
+  Anim.prototype.move = function (p, dx, d, dur) { return this.add("move", p, d, dur || 900, dx); };
+  Anim.prototype.prepare = function () {
+    for (const it of this.items) {
+      const st = it.p.style;
+      st.transition = "none";
+      if (it.k === "line") { const L = it.p.getTotalLength(); st.strokeDasharray = L; st.strokeDashoffset = L; }
+      else if (it.k === "fade") st.opacity = 0;
+      else if (it.k === "grow") { st.transformBox = "fill-box"; st.transformOrigin = "50% 100%"; st.transform = "scaleY(0)"; }
+      else if (it.k === "move") st.transform = `translateX(${it.extra}px)`;
+    }
+  };
+  Anim.prototype.play = function () {
+    if (!this.items.length || this.played) return;
+    this.played = true;
+    void document.body.offsetWidth;
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      for (const it of this.items) {
+        const st = it.p.style, e = `${it.dur}ms cubic-bezier(.25,.7,.25,1) ${it.d}ms`;
+        if (it.k === "line") { st.transition = `stroke-dashoffset ${e}`; st.strokeDashoffset = 0; }
+        else if (it.k === "fade") { st.transition = `opacity ${e}`; st.opacity = 1; }
+        else { st.transition = `transform ${e}`; st.transform = "none"; }
+      }
+    }));
+  };
+
+  // ---------- tooltip ----------
+  const tip = document.createElement("div");
+  tip.className = "viz-tip";
+  tip.hidden = true;
+  document.body.appendChild(tip);
+  function hover(svg, pts, opts) {
+    opts = opts || {};
+    const ring = s("circle", { r: 7, class: "hover-ring", visibility: "hidden" }, svg);
+    function hide() { tip.hidden = true; ring.setAttribute("visibility", "hidden"); }
+    function move(e) {
+      const b = svg.getBoundingClientRect(), k = b.width / svg.viewBox.baseVal.width;
+      const mx = (e.clientX - b.left) / k, my = (e.clientY - b.top) / k;
+      let best = null, bd = Infinity;
+      for (const p of pts) {
+        const d = opts.byX ? Math.abs(p.x - mx) : Math.hypot(p.x - mx, p.y - my);
+        if (d < bd) { bd = d; best = p; }
+      }
+      if (!best || bd > (opts.lim || 28)) return hide();
+      if (!opts.noRing) { ring.setAttribute("cx", best.x); ring.setAttribute("cy", best.y); ring.setAttribute("visibility", "visible"); }
+      tip.innerHTML = best.html;
+      tip.hidden = false;
+      const tw = tip.offsetWidth, th = tip.offsetHeight;
+      let left = e.clientX + 14, top = e.clientY - th - 12;
+      if (left + tw > innerWidth - 8) left = e.clientX - tw - 14;
+      if (top < 8) top = e.clientY + 18;
+      tip.style.left = Math.max(8, left) + "px";
+      tip.style.top = top + "px";
+    }
+    svg.addEventListener("pointermove", move);
+    svg.addEventListener("pointerdown", move);
+    svg.addEventListener("pointerleave", hide);
+  }
+
+  // ---------- chart: Step 4 monthly totals (columns) ----------
+  function drawStep4(host, a) {
+    const W = host.clientWidth, H = 240, m = { l: 40, r: 8, t: 34, b: 26 };
+    const svg = svgFor(host, W, H, "Column chart of monthly total units, July 2016 to June 2018; January 2017 shows only 1 unit");
+    const d = DATA.step4, iw = W - m.l - m.r, ih = H - m.t - m.b;
+    const tk = ticks(0, 2710, 3), y = lin(0, tk.hi, m.t + ih, m.t);
+    yAxis(svg, y, tk, m.l, W - m.r);
+    const band = iw / d.length, bw = Math.max(3, Math.min(24, band - 2)), pts = [];
+    d.forEach(([date, v], i) => {
+      const x = m.l + i * band + (band - bw) / 2, h = y(0) - y(v), bad = date === "2017-01-31";
+      const bar = s("path", { d: barPath(x, y(v), bw, Math.max(h, 0.0001), 4), class: bad ? "bar-bad" : "bar-s1" }, svg);
+      a.grow(bar, i * 35, 600);
+      if (i % 6 === 0) txt(svg, x + bw / 2, H - 8, monthName(date.slice(0, 7)), { class: "tick", "text-anchor": "middle" });
+      if (bad) {
+        const cx = x + bw / 2;
+        const g = s("g", {}, svg);
+        s("line", { x1: cx, x2: cx, y1: y(0) - 4, y2: m.t - 6, class: "leader" }, g);
+        txt(g, cx + 6, m.t - 10, "Jan 2017: 1 unit (missing data)", { class: "annot" });
+        s("circle", { cx, cy: y(0) - 2, r: 4, class: "dot-bad" }, g);
+        a.fade(g, 1100, 500);
+      }
+      pts.push({ x: x + bw / 2, y: y(v), html: `<b>${monthName(date.slice(0, 7))}</b><br>${(+v).toLocaleString()} units` });
+    });
+    hover(svg, pts, { byX: true, lim: band, noRing: true });
+  }
+
+  // ---------- chart: Q2 small multiples (avg monthly units per year) ----------
+  function drawQ2(host, a) {
+    const grid = document.createElement("div");
+    grid.className = "multiples";
+    host.appendChild(grid);
+    Object.entries(DATA.q2).forEach(([drug, rows], i) => {
+      const panel = document.createElement("div");
+      panel.className = "mini";
+      const first = rows[0][1], last = rows[rows.length - 1][1];
+      panel.innerHTML = `<div class="mini-title">${DATA.short[drug]}</div><div class="mini-sub">${first.toFixed(1)} → ${last.toFixed(1)} per month</div>`;
+      grid.appendChild(panel);
+      const W = panel.clientWidth, H = 120, m = { l: 12, r: 12, t: 22, b: 20 };
+      const svg = svgFor(panel, W, H, `${drug}: average monthly units by year, 2014 to 2019`);
+      const max = Math.max(...rows.map((r) => r[1]));
+      const x = lin(0, rows.length - 1, m.l, W - m.r), y = lin(0, max * 1.12, H - m.b, m.t);
+      const x17 = x(3);
+      s("rect", { x: x17 - 9, y: m.t - 6, width: 18, height: H - m.b - m.t + 6, class: "band-2017" }, svg);
+      s("line", { x1: m.l, x2: W - m.r, y1: y(0), y2: y(0), class: "axis" }, svg);
+      txt(svg, m.l, H - 5, "2014", { class: "tick" });
+      txt(svg, x17, H - 5, "2017", { class: "tick tick-faint", "text-anchor": "middle" });
+      txt(svg, W - m.r, H - 5, "2019", { class: "tick", "text-anchor": "end" });
+      const path = s("path", { d: rows.map((r, j) => (j ? "L" : "M") + x(j) + "," + y(r[1])).join(""), class: "line s1" }, svg);
+      const base = i * 140;
+      a.line(path, base, 1300);
+      const pts = [];
+      rows.forEach((r, j) => {
+        const dot = s("circle", { cx: x(j), cy: y(r[1]), r: 3.5, class: "dot s1" }, svg);
+        a.fade(dot, base + (j / (rows.length - 1)) * 1100, 250);
+        const g = r[2] === null ? "first year" : `${signed(r[2])}% vs ${+r[0] - 1}`;
+        pts.push({ x: x(j), y: y(r[1]), html: `<b>${drug}, ${r[0]}</b><br>${r[1].toFixed(1)} units/month<br>${g}` });
+      });
+      const l0 = txt(svg, x(0), y(first) - 9, first.toFixed(1), { class: "val", "text-anchor": "start" });
+      const l1 = txt(svg, x(rows.length - 1), y(last) - 9, last.toFixed(1), { class: "val", "text-anchor": "end" });
+      a.fade(l0, base, 300);
+      a.fade(l1, base + 1200, 300);
+      hover(svg, pts, { byX: true, lim: 40 });
+    });
+  }
+
+  // ---------- chart: Q4 seasonal lines ----------
+  function drawQ4(host, a) {
+    const seasons = DATA.seasons, hiOrder = DATA.q4Highlight;
+    const legend = document.createElement("div");
+    legend.className = "viz-legend";
+    legend.innerHTML = hiOrder.map((d, i) => `<span><i class="key s${i + 1}"></i>${DATA.short[d]}</span>`).join("") +
+      `<span><i class="key muted"></i>Other 5 classes (mostly flat)</span>`;
+    host.appendChild(legend);
+    const W = host.clientWidth, wide = W >= 560, H = 300;
+    const m = { l: 44, r: wide ? 170 : 16, t: 16, b: 30 };
+    const svg = svgFor(host, W, H, "Line chart of seasonal sales versus each drug's own average");
+    const tk = ticks(-48, 51, 5), y = lin(tk.lo, tk.hi, H - m.b, m.t);
+    const x = lin(0, 3, m.l + 18, W - m.r - 18);
+    yAxis(svg, y, tk, m.l, W - m.r, (v) => (v === 0 ? "Avg" : (v > 0 ? "+" : "") + v + "%"));
+    seasons.forEach((sn, j) => txt(svg, x(j), H - 8, sn, { class: "tick", "text-anchor": "middle" }));
+    const pts = [];
+    const drugs = Object.keys(DATA.q4).sort((p, q) => hiOrder.indexOf(p) - hiOrder.indexOf(q));
+    // grey first so highlighted lines sit on top
+    const draw = (drug, cls, delay, isHi) => {
+      const vals = DATA.q4[drug];
+      const p = s("path", { d: vals.map((v, j) => (j ? "L" : "M") + x(j) + "," + y(v[1])).join(""), class: "line " + cls }, svg);
+      a.line(p, delay, 1100);
+      vals.forEach((v, j) => {
+        if (isHi) a.fade(s("circle", { cx: x(j), cy: y(v[1]), r: 4, class: "dot " + cls }, svg), delay + j * 330, 250);
+        pts.push({ x: x(j), y: y(v[1]), html: `<b>${drug}</b><br>${seasons[j]}: ${signed(v[1])}% vs its average<br>${v[0].toFixed(1)} units/month` });
+      });
+      if (isHi && wide) {
+        const lv = vals[3][1];
+        const t = txt(svg, x(3) + 12, y(lv) + 4, DATA.short[drug], { class: "end-label" });
+        a.fade(t, delay + 1100, 300);
+      }
+    };
+    drugs.filter((d) => !hiOrder.includes(d)).forEach((d) => draw(d, "muted", 0, false));
+    hiOrder.forEach((d, i) => draw(d, "s" + (i + 1), 300 + i * 450, true));
+    hover(svg, pts, {});
+  }
+
+  // ---------- chart: scatter explorer (sales vs search / temperature) ----------
+  function ols(xs, ys) {
+    const n = xs.length, mx = xs.reduce((p, v) => p + v, 0) / n, my = ys.reduce((p, v) => p + v, 0) / n;
+    let sxy = 0, sxx = 0;
+    for (let i = 0; i < n; i++) { sxy += (xs[i] - mx) * (ys[i] - my); sxx += (xs[i] - mx) ** 2; }
+    const b = sxy / sxx;
+    return { b, a: my - b * mx };
+  }
+  function scatterPanel(host, a, drug, which) {
+    const rows = DATA.scatter[drug], term = DATA.terms[drug], r = DATA.r[drug];
+    const isSearch = which === "search", xi = isSearch ? 2 : 3;
+    const panel = document.createElement("div");
+    panel.className = "scatter-panel";
+    const rRaw = isSearch ? r.search[0] : r.temp[0], rChg = isSearch ? r.search[1] : r.temp[1];
+    panel.innerHTML = `<div class="mini-title">${isSearch ? `Sales vs. ${term}` : "Sales vs. average temperature"}</div>` +
+      `<div class="mini-sub">r = ${fmtR(rRaw)} · after removing trends: r = ${fmtR(rChg)}</div>`;
+    host.appendChild(panel);
+    const W = panel.clientWidth, H = 270, m = { l: 44, r: 12, t: 12, b: 40 };
+    const svg = svgFor(panel, W, H, `Scatter plot of monthly ${drug} sales against ${isSearch ? "search interest" : "temperature"}`);
+    const xs = rows.map((p) => p[xi]), ys = rows.map((p) => p[1]);
+    const xt = ticks(Math.min(...xs), Math.max(...xs), 5), yt = ticks(0, Math.max(...ys), 4);
+    const x = lin(xt.lo, xt.hi, m.l, W - m.r), y = lin(0, yt.hi, H - m.b, m.t);
+    yAxis(svg, y, yt, m.l, W - m.r);
+    for (const v of xt.t) txt(svg, x(v), H - m.b + 16, String(v), { class: "tick", "text-anchor": "middle" });
+    txt(svg, (m.l + W - m.r) / 2, H - 4, isSearch ? "Search interest (0–100)" : "Average temperature (°C)", { class: "axis-title", "text-anchor": "middle" });
+    txt(svg, m.l + 2, m.t + 10, "Units sold per month", { class: "axis-title" });
+    const order = rows.map((_, i) => i).sort((p, q) => xs[p] - xs[q]), pts = [];
+    order.forEach((i, k) => {
+      const c = s("circle", { cx: x(xs[i]), cy: y(ys[i]), r: 4, class: "pt" }, svg);
+      a.fade(c, k * 14, 250);
+      pts.push({ x: x(xs[i]), y: y(ys[i]), html: `<b>${monthName(rows[i][0])}</b><br>${ys[i]} units sold<br>${isSearch ? "Search interest: " + xs[i] : "Avg temp: " + xs[i] + " °C"}` });
+    });
+    const f = ols(xs, ys), x0 = Math.min(...xs), x1 = Math.max(...xs);
+    const tl = s("path", { d: `M${x(x0)},${y(f.a + f.b * x0)}L${x(x1)},${y(f.a + f.b * x1)}`, class: "trend" }, svg);
+    a.line(tl, order.length * 14 + 150, 1000);
+    hover(svg, pts, {});
+  }
+  function drawScatter(host, a, state) {
+    const drug = state.drug;
+    const grid = document.createElement("div");
+    grid.className = "scatter-grid";
+    host.appendChild(grid);
+    scatterPanel(grid, a, drug, "search");
+    scatterPanel(grid, a, drug, "temp");
+    const note = document.createElement("p");
+    note.className = "viz-takeaway";
+    note.innerHTML = `<b>Takeaway:</b> ${DATA.takeaway[drug]}`;
+    host.appendChild(note);
+  }
+
+  // ---------- chart: dumbbell, raw r → month-to-month r ----------
+  function dumbbell(host, a, key, title) {
+    const panel = document.createElement("div");
+    panel.className = "db-panel";
+    panel.innerHTML = `<div class="mini-title">${title}</div>`;
+    host.appendChild(panel);
+    const rows = DATA.order, W = panel.clientWidth, labW = W < 420 ? 112 : 160;
+    const m = { l: labW, r: 14, t: 34, b: 10 }, rowH = 30, H = m.t + rows.length * rowH + m.b;
+    const svg = svgFor(panel, W, H, `Correlation with ${key === "search" ? "searches" : "temperature"}, raw versus month-to-month`);
+    const x = lin(-0.8, 0.8, m.l, W - m.r);
+    s("rect", { x: x(-0.24), y: m.t - 6, width: x(0.24) - x(-0.24), height: rows.length * rowH + 2, class: "chance" }, svg);
+    txt(svg, x(0), m.t - 10, "could be chance", { class: "tick", "text-anchor": "middle" });
+    for (const v of [-0.8, -0.4, 0, 0.4, 0.8]) {
+      s("line", { x1: x(v), x2: x(v), y1: m.t - 6, y2: m.t + rows.length * rowH - 4, class: v === 0 ? "axis" : "grid" }, svg);
+      txt(svg, x(v), 12, v === 0 ? "0" : fmtR(v).replace(/0$/, "").replace(/\.$/, ""), { class: "tick", "text-anchor": "middle" });
+    }
+    const pts = [];
+    rows.forEach((drug, i) => {
+      const [raw, chg] = DATA.r[drug][key], cy = m.t + i * rowH + rowH / 2 - 4, strong = Math.abs(chg) >= 0.4;
+      txt(svg, m.l - 10, cy + 4, W < 420 ? DATA.tiny[drug] : DATA.short[drug], { class: "row-label" + (strong ? " strong" : ""), "text-anchor": "end" });
+      const conn = s("path", { d: `M${x(raw)},${cy}L${x(chg)},${cy}`, class: "conn" }, svg);
+      s("circle", { cx: x(raw), cy, r: 4.5, class: "pt-raw" }, svg);
+      const dot = s("circle", { cx: x(chg), cy, r: 5, class: strong ? "pt-chg strong" : "pt-chg" }, svg);
+      a.line(conn, 300 + i * 160, 900);
+      a.move(dot, x(raw) - x(chg), 300 + i * 160, 900);
+      pts.push({ x: x(chg), y: cy, html: `<b>${drug}</b><br>Raw: r = ${fmtR(raw)}<br>Month-to-month: r = ${fmtR(chg)}` });
+      pts.push({ x: x(raw), y: cy, html: `<b>${drug}</b><br>Raw: r = ${fmtR(raw)}<br>Month-to-month: r = ${fmtR(chg)}` });
+    });
+    hover(svg, pts, { noRing: true });
+  }
+  function drawDumbbell(host, a) {
+    const legend = document.createElement("div");
+    legend.className = "viz-legend";
+    legend.innerHTML = `<span><i class="key-dot hollow"></i>Raw monthly values</span><span><i class="key-dot"></i>After removing long-term trends</span><span><i class="key-dot strong"></i>|r| ≥ 0.4 after removing trends</span>`;
+    host.appendChild(legend);
+    const grid = document.createElement("div");
+    grid.className = "scatter-grid";
+    host.appendChild(grid);
+    dumbbell(grid, a, "search", "Sales vs. Google searches");
+    dumbbell(grid, a, "temp", "Sales vs. temperature");
+  }
+
+  // ---------- registry, scroll trigger, replay, resize ----------
+  const charts = [];
+  function render(c, animate) {
+    c.host.innerHTML = "";
+    const a = new Anim(animate);
+    c.draw(c.host, a, c.state);
+    a.prepare();
+    c.anim = a;
+    c.width = c.host.clientWidth;
+    if (c.visible) a.play();
+  }
+  function register(id, draw, state) {
+    const host = document.getElementById(id);
+    if (!host) return;
+    const c = { host, draw, state: state || {}, visible: false };
+    charts.push(c);
+    const fig = host.closest("figure");
+    const btn = fig && fig.querySelector(".replay");
+    if (btn) btn.addEventListener("click", () => render(c, true));
+    if (fig) fig.querySelectorAll("[data-drug]").forEach((b) => b.addEventListener("click", () => {
+      fig.querySelectorAll("[data-drug]").forEach((o) => o.setAttribute("aria-pressed", o === b));
+      c.state.drug = b.dataset.drug;
+      render(c, true);
+    }));
+    render(c, true);
+  }
+  register("v-step4", drawStep4);
+  register("v-q2", drawQ2);
+  register("v-q4", drawQ4);
+  register("v-scatter", drawScatter, { drug: "Antihistamines" });
+  register("v-dumbbell", drawDumbbell);
+
+  const cssAnimated = document.querySelectorAll(".chart, .rankgrid");
+  if ("IntersectionObserver" in window) {
+    const io = new IntersectionObserver((entries) => {
+      for (const e of entries) {
+        if (!e.isIntersecting) continue;
+        e.target.classList.add("in");
+        const c = charts.find((ch) => ch.host === e.target);
+        if (c && !c.visible) { c.visible = true; c.anim.play(); }
+        io.unobserve(e.target);
+      }
+    }, { threshold: 0.3 });
+    charts.forEach((c) => io.observe(c.host));
+    cssAnimated.forEach((n) => io.observe(n));
+  } else {
+    charts.forEach((c) => { c.visible = true; c.anim.play(); });
+    cssAnimated.forEach((n) => n.classList.add("in"));
+  }
+  let rt;
+  window.addEventListener("resize", () => {
+    clearTimeout(rt);
+    rt = setTimeout(() => charts.forEach((c) => { if (c.host.clientWidth !== c.width) render(c, false); }), 150);
+  });
+})();
+</script>
+</body>
+</html>

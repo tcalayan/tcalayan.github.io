@@ -1,0 +1,787 @@
+/* =========================================================
+   Tyra's Data Portfolio — styles
+   Theme: "API docs in night mode"
+   Change colors/fonts here in :root and the whole site follows.
+   ========================================================= */
+
+:root {
+  /* --- Colors --- */
+  --bg:        #0d1117;  /* page background */
+  --panel:     #161b22;  /* panels / sidebar */
+  --border:    #30363d;
+  --text:      #e6edf3;
+  --muted:     #8b949e;
+  --green:     #3fb950;  /* like GET */
+  --blue:      #58a6ff;  /* like links / PUT */
+  --orange:    #d29922;  /* like POST */
+  --purple:    #bc8cff;
+  --red:       #f85149;  /* like DELETE */
+
+  /* --- Fonts --- */
+  --font-pixel: "Press Start 2P", monospace;
+  --font-body:  "IBM Plex Mono", ui-monospace, Menlo, monospace;
+
+  /* --- Layout --- */
+  --hero-height: 50vh;   /* top half (animation) */
+  --gutter: clamp(16px, 4vw, 56px);
+}
+
+/* ---------- Base ---------- */
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body { margin: 0; height: 100%; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+}
+
+a { color: var(--blue); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* ---------- ☰ Menu button (top-left, always on top) ---------- */
+.menu-btn {
+  position: fixed;
+  top: 12px;
+  left: 12px;
+  z-index: 30;
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  box-shadow: 3px 3px 0 var(--border);
+  cursor: pointer;
+}
+.menu-btn:hover { border-color: var(--green); box-shadow: 3px 3px 0 var(--green); }
+.menu-btn:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+
+/* Three pixel bars drawn with gradients */
+.menu-icon {
+  width: 18px;
+  height: 14px;
+  background: linear-gradient(var(--text) 0 2px, transparent 2px 6px,
+                              var(--text) 6px 8px, transparent 8px 12px,
+                              var(--text) 12px 14px);
+}
+.menu-btn:hover .menu-icon {
+  background: linear-gradient(var(--green) 0 2px, transparent 2px 6px,
+                              var(--green) 6px 8px, transparent 8px 12px,
+                              var(--green) 12px 14px);
+}
+
+/* ---------- Sidebar ---------- */
+.sidebar-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: rgba(1, 4, 9, 0.6);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s, visibility 0s 0.3s;
+}
+.sidebar-backdrop.is-open { opacity: 1; visibility: visible; transition: opacity 0.3s; }
+
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  z-index: 50;
+  width: min(340px, 88vw);
+  display: flex;
+  flex-direction: column;
+  padding: 0 0 16px;
+  background: var(--panel);
+  border-right: 1px solid var(--border);
+  box-shadow: 6px 0 0 rgba(1, 4, 9, 0.4);
+  overflow-y: auto;
+  transform: translateX(-105%);
+  visibility: hidden;                         /* not focusable while closed */
+  transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1), visibility 0s 0.35s;
+}
+.sidebar.is-open {
+  transform: translateX(0);
+  visibility: visible;
+  transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.sidebar-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 64px;
+  padding: 0 16px 0 20px;
+  border-bottom: 1px solid var(--border);
+}
+.sidebar-title { font-family: var(--font-pixel); font-size: 12px; color: var(--green); }
+
+.sidebar-close {
+  width: 32px;
+  height: 32px;
+  font-family: var(--font-pixel);
+  font-size: 11px;
+  color: var(--muted);
+  background: transparent;
+  border: 1px solid var(--border);
+  cursor: pointer;
+}
+.sidebar-close:hover { color: var(--red); border-color: var(--red); }
+.sidebar-close:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+
+.sidebar-label {
+  margin: 22px 20px 8px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.nav-list { list-style: none; margin: 0; padding: 0; }
+
+.nav-link {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 10px 16px 10px 17px;
+  color: var(--text);
+  border-left: 3px solid transparent;
+}
+.nav-link:hover { background: rgba(88, 166, 255, 0.08); text-decoration: none; }
+.nav-link:focus-visible { outline: 2px solid var(--blue); outline-offset: -2px; }
+.nav-link .method { flex-shrink: 0; margin-top: 2px; }
+
+/* The page you're on */
+.nav-link[aria-current="page"] {
+  background: rgba(63, 185, 80, 0.1);
+  border-left-color: var(--green);
+}
+.nav-link[aria-current="page"] .nav-title { color: var(--green); }
+
+.nav-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.nav-title { font-weight: 600; font-size: 14px; }
+.nav-tagline { font-size: 12px; line-height: 1.45; color: var(--muted); }
+
+.nav-tools { display: flex; gap: 4px; flex-shrink: 0; margin-top: 2px; }
+.nav-tool {
+  font-family: var(--font-pixel);
+  font-size: 8px;
+  padding: 3px 5px;
+  color: var(--blue);
+  border: 1px solid currentColor;
+}
+/* Same tool colors as the About Me tags */
+.nav-tool[data-tool="SQL"] { color: var(--orange); }
+.nav-tool[data-tool="Excel"],
+.nav-tool[data-tool="Google Sheets"] { color: var(--green); }
+.nav-tool[data-tool="Python"] { color: var(--purple); }
+
+.sidebar-foot {
+  margin: auto 20px 0;
+  padding-top: 24px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* No page scrolling behind the open menu */
+body.sidebar-open { overflow: hidden; }
+
+/* ---------- Top half: animation strip ---------- */
+.hero {
+  position: relative;
+  height: var(--hero-height);
+  border-bottom: 1px solid var(--border);
+  overflow: hidden;
+  /* faint pixel grid so the empty strip still feels "designed" */
+  background-image:
+    linear-gradient(var(--panel) 1px, transparent 1px),
+    linear-gradient(90deg, var(--panel) 1px, transparent 1px);
+  background-size: 16px 16px;
+}
+
+/* The canvas is drawn small and scaled up; dna.js sets its exact width/height */
+#dna-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  image-rendering: crisp-edges;
+  image-rendering: pixelated;      /* keep pixels crisp when scaled up */
+}
+
+/* Play / pause button in the bottom-left corner of the strip */
+.motion-toggle {
+  position: absolute;
+  left: 12px;
+  bottom: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 9px;
+  font-family: var(--font-pixel);
+  font-size: 8px;
+  line-height: 1;
+  color: var(--muted);
+  background: var(--panel);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  opacity: 0.75;
+}
+.motion-toggle:hover,
+.motion-toggle:focus-visible { color: var(--text); border-color: var(--muted); opacity: 1; }
+.motion-toggle:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+
+/* Pixel icons drawn with CSS: two bars = pause, triangle = play */
+.motion-icon { width: 8px; height: 8px; background: currentColor; }
+.motion-toggle[data-state="playing"] .motion-icon {
+  background: linear-gradient(90deg, currentColor 0 3px, transparent 3px 5px, currentColor 5px 8px);
+}
+.motion-toggle[data-state="paused"] .motion-icon {
+  clip-path: polygon(0 0, 100% 50%, 0 100%);
+}
+
+/* ---------- "Learn more about my AWESOME projects" button ---------- */
+/* Hidden until the first animation loop ends; then it pops in and glows */
+.awesome-btn {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  max-width: calc(100% - 32px);
+  padding: 16px 20px;
+  font-family: var(--font-pixel);
+  font-size: clamp(9px, 1.1vw, 13px);
+  line-height: 1.6;
+  color: var(--text);
+  background: var(--bg);
+  border: 2px solid var(--green);
+  box-shadow: 5px 5px 0 var(--green);          /* blocky pixel shadow */
+  cursor: pointer;
+  transform: translate(-50%, -50%) scale(0);
+  visibility: hidden;                            /* not clickable / focusable until shown */
+}
+
+.awesome-btn.is-visible {
+  visibility: visible;
+  transform: translate(-50%, -50%) scale(1);
+  animation:
+    awesome-pop 0.7s cubic-bezier(0.3, 1.6, 0.5, 1) backwards,   /* "backwards" so hover/click movement still works after */
+    awesome-glow 2.4s ease-in-out 0.7s infinite;
+}
+
+/* Pixel "press": lift on hover, push down on click */
+.awesome-btn.is-visible:hover  { transform: translate(calc(-50% - 2px), calc(-50% - 2px)); box-shadow: 7px 7px 0 var(--green); }
+.awesome-btn.is-visible:active { transform: translate(calc(-50% + 4px), calc(-50% + 4px)); box-shadow: 1px 1px 0 var(--green); }
+.awesome-btn:focus-visible { outline: 2px solid var(--blue); outline-offset: 6px; }
+
+@keyframes awesome-pop {
+  0%   { transform: translate(-50%, -50%) scale(0); }
+  100% { transform: translate(-50%, -50%) scale(1); }
+}
+@keyframes awesome-glow {
+  0%, 100% { box-shadow: 5px 5px 0 var(--green), 0 0 0 rgba(63, 185, 80, 0); }
+  50%      { box-shadow: 5px 5px 0 var(--green), 0 0 28px rgba(63, 185, 80, 0.45); }
+}
+
+/* The word AWESOME: each letter its own accent color, bouncing in a wave */
+.awesome-word { display: inline-block; white-space: nowrap; }
+.awesome-word span { display: inline-block; animation: awesome-hop 1.8s ease-in-out infinite; }
+.awesome-word span:nth-child(1) { color: var(--green);  animation-delay: 0s; }
+.awesome-word span:nth-child(2) { color: var(--blue);   animation-delay: 0.08s; }
+.awesome-word span:nth-child(3) { color: var(--orange); animation-delay: 0.16s; }
+.awesome-word span:nth-child(4) { color: var(--purple); animation-delay: 0.24s; }
+.awesome-word span:nth-child(5) { color: var(--red);    animation-delay: 0.32s; }
+.awesome-word span:nth-child(6) { color: var(--green);  animation-delay: 0.40s; }
+.awesome-word span:nth-child(7) { color: var(--blue);   animation-delay: 0.48s; }
+@keyframes awesome-hop {
+  0%, 40%, 100% { transform: translateY(0); }
+  20%           { transform: translateY(-4px); }
+}
+
+.awesome-arrow { display: inline-block; color: var(--green); transition: transform 0.2s; }
+.awesome-btn:hover .awesome-arrow { transform: translateX(4px); }
+
+/* Text for screen readers only */
+.visually-hidden {
+  position: absolute;
+  width: 1px; height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* ---------- Bottom half: About Me ---------- */
+.about {
+  height: calc(100vh - var(--hero-height));
+  overflow-y: auto;               /* scrolls only if text doesn't fit */
+}
+
+.about-inner {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: clamp(20px, 4vh, 40px) var(--gutter);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: clamp(24px, 4vw, 56px);
+  align-items: start;
+}
+
+.about-text p { margin: 0 0 0.9em; max-width: 68ch; }
+.about-text p:last-child { margin-bottom: 0; }
+
+h1 {
+  font-family: var(--font-pixel);
+  font-size: clamp(16px, 2vw, 22px);
+  line-height: 1.4;
+  margin: 0 0 0.8em;
+}
+
+.lead { color: var(--green); font-weight: 500; }
+
+/* The 👋 waves once in a while */
+.wave { display: inline-block; transform-origin: 70% 70%; animation: wave 4s ease-in-out infinite; }
+@keyframes wave {
+  0%, 60%, 100% { transform: rotate(0); }
+  65%, 75%      { transform: rotate(16deg); }
+  70%, 80%      { transform: rotate(-8deg); }
+}
+
+/* ---------- API-style bits (method badge, endpoint label) ---------- */
+.endpoint {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 1.1em;
+  font-size: 13px;
+}
+.endpoint-path { color: var(--text); }
+.status { color: var(--green); margin-left: 4px; }
+.status::before { content: "● "; }
+
+.method {
+  font-family: var(--font-pixel);
+  font-size: 9px;
+  padding: 4px 6px;
+  border: 1px solid currentColor;
+  line-height: 1;
+}
+.method-get    { color: var(--green); }
+.method-post   { color: var(--orange); }
+.method-put    { color: var(--blue); }
+.method-delete { color: var(--red); }
+
+/* ---------- Right panel: tools + links ---------- */
+.about-panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  font-size: 13px;
+}
+
+.panel-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+}
+.dot { width: 8px; height: 8px; display: inline-block; }   /* square = pixel style */
+.dot-red    { background: var(--red); }
+.dot-orange { background: var(--orange); }
+.dot-green  { background: var(--green); }
+.panel-title { margin-left: 8px; color: var(--muted); }
+
+.panel-body { padding: 14px 16px 16px; }
+
+.panel-label {
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--purple);
+  margin: 0 0 8px;
+}
+.panel-label:not(:first-child) { margin-top: 16px; }
+
+/* Pixel "tags" for tools */
+.tags, .links { list-style: none; margin: 0; padding: 0; }
+.tags { display: flex; flex-wrap: wrap; gap: 8px; }
+
+.tag {
+  font-family: var(--font-pixel);
+  font-size: 9px;
+  line-height: 1;
+  padding: 6px 8px;
+  border: 1px solid currentColor;
+  box-shadow: 2px 2px 0 currentColor;   /* blocky pixel shadow */
+}
+.tag-blue   { color: var(--blue); }
+.tag-orange { color: var(--orange); }
+.tag-green  { color: var(--green); }
+.tag-learning { color: var(--muted); border-style: dashed; box-shadow: none; }
+.tag small { font-family: var(--font-body); font-size: 10px; }
+
+.links li + li { margin-top: 6px; }
+.links a { color: var(--text); display: inline-flex; align-items: center; gap: 10px; }
+.links a:hover { color: var(--blue); text-decoration: none; }
+.links .method { min-width: 44px; text-align: center; }
+
+/* Visit counter under the links (js/analytics.js shows it once the number arrives) */
+.site-visits { margin: 16px 0 0; color: var(--muted); }
+.site-visits[hidden] { display: none; }
+.site-visits .visits-key { color: var(--purple); font-weight: 500; }
+.site-visits .visits-num { color: var(--green); }
+.site-visits .visits-note { display: block; font-size: 11px; }   /* own line, under the number */
+
+/* ---------- Project view (full-screen iframe, below the ☰ button) ---------- */
+.project-view {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  background: #fff;          /* projects have white backgrounds */
+  opacity: 0;
+  visibility: hidden;
+}
+.project-view.is-visible { visibility: visible; }
+.project-view.is-incoming { z-index: 21; }   /* the one being pulled in sits on top */
+
+/* Edges that show while the penguin drags a page (black, like the penguin) */
+.project-view.is-pulled-x { border-right: 4px solid #14171c; box-shadow: 12px 0 30px rgba(0, 0, 0, 0.3); }
+.project-view.is-pulled-y { border-top: 4px solid #14171c; box-shadow: 0 -12px 30px rgba(0, 0, 0, 0.45); }
+
+/* Slim white bar at the top of a project: holds the ☰ button's spot + the page's "address" */
+.project-view {
+  --bar-height: 64px;
+}
+.project-bar {
+  height: var(--bar-height);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-left: 68px;                    /* room for the ☰ button */
+  font-size: 13px;
+  color: #57606a;
+  background: #fff;
+  border-bottom: 1px solid #eaeef2;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.project-bar .method { color: #1a7f37; }  /* darker green that reads on white */
+.project-path { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+
+.project-bar .status { color: #1a7f37; }
+
+/* TL;DR hint: a pixel cursor that "clicks" the TL;DR button once per visit (js/tldr-hint.js).
+   The button itself lives inside the project page; its styles are in js/tldr.js. */
+.tldr-hint-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 35;               /* over the project + ☰ (30), under the sidebar (40/50) and stages (60) */
+  pointer-events: none;      /* never blocks a click */
+  overflow: hidden;
+}
+.tldr-hint-cursor { position: absolute; left: 0; top: 0; }   /* moved with transform; tip = top-left */
+.tldr-hint-arrow {
+  display: block;
+  background-size: 100% 100%;
+  image-rendering: pixelated;          /* crisp pixels, no blur */
+  transform-origin: 0 0;               /* shrink towards the tip when "clicking" */
+  filter: drop-shadow(2px 2px 0 rgba(20, 23, 28, 0.25));
+}
+.tldr-hint-label {
+  position: absolute;
+  top: 38px;
+  right: -8px;                          /* under the cursor, towards the left */
+  padding: 5px 6px;
+  font-family: var(--font-pixel);
+  font-size: 8px;
+  line-height: 1;
+  white-space: nowrap;
+  color: #1c1917;
+  background: #fff;
+  border: 2px solid #1c1917;
+  box-shadow: 2px 2px 0 #1c1917;
+  opacity: 0;
+  transform: translateY(-4px);
+  transition: opacity 0.15s, transform 0.15s;
+}
+.tldr-hint-label.is-shown { opacity: 1; transform: none; }
+.tldr-hint-ring {                       /* grows out of the button on each pretend click */
+  position: absolute;
+  border: 2px dashed #1c1917;
+}
+
+.project-frame {
+  display: block;
+  width: 100%;
+  height: calc(100% - var(--bar-height));
+  border: 0;
+  background: #fff;
+}
+
+/* ---------- Pill transition (above everything while it plays) ---------- */
+.pill-stage {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: none;             /* pill.js shows it (display: grid) during a transition */
+  place-items: center;
+}
+
+.pill {
+  will-change: transform;
+  /* 4 hard-edged shadows = a pixel outline that follows the stair-stepped shape */
+  filter:
+    drop-shadow(4px 0 0 var(--text)) drop-shadow(-4px 0 0 var(--text))
+    drop-shadow(0 4px 0 var(--text)) drop-shadow(0 -4px 0 var(--text));
+}
+
+/* width, height and the pixel capsule shape (clip-path) are set by pill.js */
+.pill-body { position: relative; display: flex; }
+.pill-half { flex: 1; }
+.pill-dark  { background: var(--panel); }
+.pill-light { background: #fff; box-shadow: inset 4px 0 0 #d0d7de; }   /* seam between halves */
+
+/* pixel highlight stripe + shadow row, so it reads as a shiny capsule */
+.pill-shine {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 12px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.25);
+  box-shadow: 0 36px 0 rgba(0, 0, 0, 0.12);
+}
+
+/* ---------- Penguin transitions (js/penguin.js builds these elements) ---------- */
+.penguin-stage {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: none;             /* shown only while the penguin is working */
+  overflow: hidden;
+}
+
+.penguin, .rope, .rope-knob, .lasso-ring { position: absolute; top: 0; left: 0; }
+
+/* Snow bank + flakes behind the sliding penguin (drawn small, scaled up crisp) */
+.snow-scene { position: absolute; top: 0; left: 0; image-rendering: pixelated; }
+
+.penguin {
+  background-size: 100% 100%;
+  image-rendering: pixelated;
+  transform-origin: 50% 100%;   /* leans back from its feet */
+  /* light pixel outline so the black penguin shows on the dark site too */
+  filter:
+    drop-shadow(3px 0 0 var(--text)) drop-shadow(-3px 0 0 var(--text))
+    drop-shadow(0 3px 0 var(--text)) drop-shadow(0 -3px 0 var(--text));
+}
+
+/* Rope: twisted black & white stripes, visible on white and dark */
+.rope {
+  height: 4px;
+  margin-top: -2px;
+  transform-origin: 0 50%;
+  background: repeating-linear-gradient(90deg, #14171c 0 6px, #e6edf3 6px 12px);
+  box-shadow: 0 0 0 1px rgba(20, 23, 28, 0.6);
+}
+
+/* Where the rope is tied to the page edge */
+.rope-knob {
+  width: 12px;
+  height: 12px;
+  background: #14171c;
+  border: 2px solid #e6edf3;
+}
+
+/* The lasso loop around the top of the page */
+.lasso-ring {
+  width: 72px;
+  height: 22px;
+  border: 4px solid #14171c;
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px #e6edf3, inset 0 0 0 2px #e6edf3;
+}
+
+/* ---------- Rating pop-up (js/feedback.js) ---------- */
+
+/* Small penguin button, bottom-right, opens the pop-up any time */
+.feedback-btn {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 30;
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  box-shadow: 3px 3px 0 var(--border);
+  cursor: pointer;
+  opacity: 0.9;
+}
+.feedback-btn:hover { opacity: 1; border-color: var(--green); box-shadow: 3px 3px 0 var(--green); }
+.feedback-btn:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+.fb-mini-penguin { width: 32px; height: 32px; background-size: 100% 100%; image-rendering: pixelated; }
+
+.feedback {
+  position: fixed;
+  inset: 0;
+  z-index: 70;                /* above everything, even transitions */
+  display: none;
+  place-items: center;
+  padding: 16px;
+}
+.feedback.is-open { display: grid; }
+
+.fb-backdrop { position: absolute; inset: 0; background: rgba(1, 4, 9, 0.7); }
+
+.fb-card {
+  position: relative;
+  width: min(460px, 100%);
+  padding: 28px 24px 20px;
+  background: var(--panel);
+  border: 2px solid var(--border);
+  box-shadow: 6px 6px 0 #010409;
+  animation: fb-pop 0.35s cubic-bezier(0.3, 1.6, 0.5, 1);
+}
+@keyframes fb-pop {
+  from { transform: scale(0.6); opacity: 0; }
+  to   { transform: none; opacity: 1; }
+}
+
+.fb-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 30px;
+  height: 30px;
+  font-family: var(--font-pixel);
+  font-size: 10px;
+  color: var(--muted);
+  background: transparent;
+  border: 1px solid var(--border);
+  cursor: pointer;
+}
+.fb-close:hover { color: var(--red); border-color: var(--red); }
+
+/* Penguin + speech bubble */
+.fb-talk { display: flex; align-items: flex-end; gap: 16px; margin: 4px 0 20px; }
+.fb-penguin {
+  flex-shrink: 0;
+  width: 80px;
+  height: 80px;
+  background-size: 100% 100%;
+  image-rendering: pixelated;
+  filter:
+    drop-shadow(2px 0 0 var(--text)) drop-shadow(-2px 0 0 var(--text))
+    drop-shadow(0 2px 0 var(--text)) drop-shadow(0 -2px 0 var(--text));
+}
+.fb-bubble {
+  position: relative;
+  flex: 1;
+  margin: 0 30px 18px 0;      /* room for the X button; sits up near the penguin's head */
+  padding: 12px 14px;
+  font-size: 13px;
+  line-height: 1.55;
+  background: var(--bg);
+  border: 2px solid var(--text);
+}
+/* Pixel tail pointing at the penguin */
+.fb-bubble::before,
+.fb-bubble::after {
+  content: "";
+  position: absolute;
+  clip-path: polygon(100% 0, 0 100%, 100% 100%);
+}
+.fb-bubble::before { left: -12px; bottom: 10px; width: 12px; height: 12px; background: var(--text); }
+.fb-bubble::after  { left: -7px;  bottom: 12px; width: 7px;  height: 7px;  background: var(--bg); }
+
+/* Rating buttons: 1 2 3 4 [When can you start?!] */
+.fb-scale { display: flex; flex-wrap: wrap; gap: 8px; }
+.fb-rate {
+  min-width: 44px;
+  height: 44px;
+  font-family: var(--font-pixel);
+  font-size: 12px;
+  color: var(--text);
+  background: var(--bg);
+  border: 2px solid var(--border);
+  box-shadow: 3px 3px 0 var(--border);
+  cursor: pointer;
+}
+.fb-rate:hover,
+.fb-rate:focus-visible { outline: none; border-color: var(--blue); box-shadow: 3px 3px 0 var(--blue); transform: translate(-1px, -1px); }
+.fb-rate-max {
+  flex: 1;
+  padding: 0 10px;
+  font-size: 9px;
+  color: var(--green);
+  border-color: var(--green);
+  box-shadow: 3px 3px 0 var(--green);
+}
+.fb-rate-max:hover,
+.fb-rate-max:focus-visible { border-color: var(--green); box-shadow: 4px 4px 0 var(--green), 0 0 18px rgba(63, 185, 80, 0.4); }
+
+.fb-note { margin: 12px 0 0; font-size: 12px; color: var(--muted); }
+
+/* Feedback box */
+#fb-text {
+  display: block;
+  width: 100%;
+  min-height: 96px;
+  padding: 10px 12px;
+  font-family: var(--font-body);
+  font-size: 13px;
+  color: var(--text);
+  background: var(--bg);
+  border: 2px solid var(--border);
+  resize: vertical;
+}
+#fb-text:focus { outline: none; border-color: var(--blue); }
+#fb-text::placeholder { color: var(--muted); }
+
+.fb-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 12px; }
+.fb-skip,
+.fb-send {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  font-family: var(--font-body);
+  font-size: 13px;
+  cursor: pointer;
+}
+.fb-skip { color: var(--muted); background: none; border: 1px solid var(--border); }
+.fb-skip:hover { color: var(--text); border-color: var(--muted); }
+.fb-send { color: var(--text); background: var(--bg); border: 2px solid var(--orange); box-shadow: 3px 3px 0 var(--orange); }
+.fb-send:hover { transform: translate(-1px, -1px); box-shadow: 4px 4px 0 var(--orange); }
+.fb-skip:focus-visible,
+.fb-send:focus-visible,
+.fb-close:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+
+/* ---------- Shorter laptop screens (e.g. 1366×768): keep About Me on one screen ---------- */
+@media (min-width: 761px) and (max-height: 900px) {
+  .about-inner { padding-top: clamp(12px, 2vh, 28px); padding-bottom: clamp(12px, 2vh, 28px); }
+  .endpoint { margin-bottom: 0.8em; }
+  h1 { margin-bottom: 0.55em; }
+  .about-text { font-size: 14px; line-height: 1.6; }
+  .about-text p { margin-bottom: 0.7em; }
+  .panel-label:not(:first-child) { margin-top: 12px; }
+  .site-visits { margin-top: 4px; }               /* visit counter: tucked under the links */
+}
+
+/* ---------- Small screens (phones / narrow windows) ---------- */
+@media (max-width: 760px) {
+  :root { --hero-height: 35vh; }          /* shorter animation strip */
+
+  .about { height: auto; overflow: visible; }  /* page scrolls normally */
+  .about-inner { grid-template-columns: 1fr; }
+  .fb-penguin { width: 64px; height: 64px; }      /* smaller penguin in the rating pop-up */
+  .fb-card { padding: 24px 16px 16px; }
+}
+
+/* ---------- Reduced motion: no waving hand (more in step 7) ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .wave { animation: none; }
+}

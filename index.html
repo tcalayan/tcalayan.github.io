@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tyra — Data Portfolio</title>
+  <meta name="description" content="Tyra's data portfolio: biology graduate turned data analyst.">
+  <!-- Browser-tab icon: a tiny pixel pill, half dark / half white -->
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' shape-rendering='crispEdges'%3E%3Cpath fill='%23e6edf3' d='M3 4h10v1h1v1h1v4h-1v1h-1v1H3v-1H2v-1H1V6h1V5h1z'/%3E%3Cpath fill='%23161b22' d='M3 5h5v6H3v-1H2V6h1z'/%3E%3Cpath fill='%23fff' d='M8 5h5v1h1v4h-1v1H8z'/%3E%3C/svg%3E">
+
+  <!-- Fonts: Press Start 2P (pixel headings) + IBM Plex Mono (readable body) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- ===== MENU: ☰ button + slide-in sidebar (js/sidebar.js) ===== -->
+  <button class="menu-btn" id="menu-btn" type="button"
+          aria-label="Open menu" aria-controls="sidebar" aria-expanded="false">
+    <span class="menu-icon" aria-hidden="true"></span>
+  </button>
+
+  <div class="sidebar-backdrop" id="sidebar-backdrop"></div>
+
+  <nav class="sidebar" id="sidebar" aria-label="Site menu">
+    <div class="sidebar-head">
+      <span class="sidebar-title">~/tyra</span>
+      <button class="sidebar-close" id="sidebar-close" type="button" aria-label="Close menu">X</button>
+    </div>
+
+    <p class="sidebar-label">// about</p>
+    <ul class="nav-list">
+      <li>
+        <a class="nav-link" href="#/" data-route="/">
+          <span class="method method-get">GET</span>
+          <span class="nav-text"><span class="nav-title">About Me</span></span>
+        </a>
+      </li>
+    </ul>
+
+    <p class="sidebar-label">// projects</p>
+    <!-- Filled in from js/projects.js -->
+    <ul class="nav-list" id="project-list"></ul>
+
+    <p class="sidebar-foot"><span class="status">200 OK</span> · <span id="project-count"></span></p>
+  </nav>
+
+  <!-- ===== TOP HALF: DNA animation (drawn by js/dna.js) ===== -->
+  <section class="hero" aria-label="DNA animation">
+    <canvas id="dna-canvas" aria-hidden="true"></canvas>
+
+    <!-- Appears after the first animation loop (js/awesome.js); opens the sidebar -->
+    <button class="awesome-btn" id="awesome-btn" type="button">
+      Learn more about my
+      <span class="awesome-word" aria-hidden="true"><span>A</span><span>W</span><span>E</span><span>S</span><span>O</span><span>M</span><span>E</span></span>
+      <span class="visually-hidden">awesome</span>
+      projects <span class="awesome-arrow" aria-hidden="true">&gt;</span>
+    </button>
+
+    <!-- Play / pause (dna.js sets the label and state) -->
+    <button class="motion-toggle" id="motion-toggle" type="button" data-state="playing" aria-label="Pause animation">
+      <span class="motion-icon" aria-hidden="true"></span>
+      <span class="motion-label">pause</span>
+    </button>
+  </section>
+
+  <!-- ===== BOTTOM HALF: About Me ===== -->
+  <main class="about" id="about">
+    <div class="about-inner">
+
+      <!-- Left column: the text -->
+      <article class="about-text">
+        <p class="endpoint">
+          <span class="method method-get">GET</span>
+          <span class="endpoint-path">/about-me</span>
+          <span class="status">200 OK</span>
+        </p>
+
+        <h1>Hi, I'm Tyra. <span class="wave" aria-hidden="true">👋</span></h1>
+
+        <!-- About Me text versions. The one WITHOUT "hidden" is shown.
+             To switch: add  hidden  to the current one and remove it from the one you want. -->
+
+        <!-- v1 (Oct 2026): first version -->
+        <div class="about-version" data-version="v1" hidden>
+          <p class="lead">I'm a BS Biology graduate who fell in love with data.</p>
+
+          <p>
+            Not the most traditional path, I know — but biology is actually what led me here.
+            It trained me to think analytically and critically, to ask good questions, and to
+            never trust a result until it's been checked twice. During my research and thesis,
+            my favorite part was always analyzing the data.
+          </p>
+
+          <p>
+            So now I'm going all in on data. This site is my portfolio — the place where I show
+            what I've built. Go take a look (the button is right up there, and yes, the projects
+            really are awesome).
+          </p>
+        </div>
+
+        <!-- v2 (Nov 2026): biology + data together (for research assistant roles too) -->
+        <div class="about-version" data-version="v2">
+          <p class="lead">I'm a BS Biology graduate who fell in love with data.</p>
+
+          <p>
+            Biology is what led me here. It trained me to think analytically and critically, to ask
+            good questions, and to never trust a result until it's been checked twice. During my
+            research and thesis, my favorite part was always analyzing the data.
+          </p>
+
+          <p>
+            So now I'm pursuing data, and bringing my biology along for the ride. Knowing the
+            science behind the numbers helps me ask better questions and spot results that just
+            don't add up. (Domain knowledge: never a bad thing to pack.)
+          </p>
+
+          <p>
+            This is my portfolio. Go take a look (the button is right up there, and yes, the
+            projects really are awesome).
+          </p>
+        </div>
+      </article>
+
+      <!-- Right column: tools + links, styled like an API response panel -->
+      <aside class="about-panel" aria-label="Tools and links">
+        <div class="panel-head">
+          <span class="dot dot-red"></span><span class="dot dot-orange"></span><span class="dot dot-green"></span>
+          <span class="panel-title">response.json</span>
+        </div>
+
+        <div class="panel-body">
+          <h2 class="panel-label">"tools":</h2>
+          <ul class="tags">
+            <li class="tag tag-blue">R</li>
+            <li class="tag tag-orange">SQL</li>
+            <li class="tag tag-green">Excel</li>
+            <li class="tag tag-green">Google Sheets</li>
+            <li class="tag tag-learning">Python <small>(learning)</small></li>
+          </ul>
+
+          <h2 class="panel-label">"links":</h2>
+          <ul class="links">
+            <li><a href="https://www.linkedin.com/in/tyra-calayan-866516331" target="_blank" rel="noopener"><span class="method method-get">GET</span> /linkedin</a></li>
+            <li><a href="https://github.com/tcalayan" target="_blank" rel="noopener"><span class="method method-get">GET</span> /github</a></li>
+            <li><a href="mailto:tyracalayan@gmail.com"><span class="method method-post">POST</span> /email</a></li>
+          </ul>
+
+          <!-- Visit counter (js/analytics.js fills it in from the Google Sheet; hidden until then).
+               Tyra's own visits don't count. -->
+          <p class="site-visits" id="site-visits" hidden>
+            <span class="visits-key">"site_visits":</span> <span class="visits-num"></span>
+            <span class="visits-note">// counted anonymously</span>
+          </p>
+        </div>
+      </aside>
+
+    </div>
+  </main>
+
+  <!-- ===== PROJECT VIEWS: project pages, full screen, under the ☰ button (js/pill.js) =====
+       Two of them, so a new project can slide in over the old one -->
+  <div class="project-view">
+    <!-- slim white bar so the ☰ button never covers the project; pill.js fills in the path -->
+    <div class="project-bar">
+      <span class="method method-get">GET</span> <span class="project-path"></span> <span class="status">200 OK</span>
+    </div>
+    <iframe class="project-frame" title="Project"></iframe>
+  </div>
+  <div class="project-view">
+    <!-- slim white bar so the ☰ button never covers the project; pill.js fills in the path -->
+    <div class="project-bar">
+      <span class="method method-get">GET</span> <span class="project-path"></span> <span class="status">200 OK</span>
+    </div>
+    <iframe class="project-frame" title="Project"></iframe>
+  </div>
+
+  <!-- ===== RATING POP-UP: penguin asks for a rating + feedback (js/feedback.js) ===== -->
+  <button class="feedback-btn" id="feedback-btn" type="button" aria-label="Rate this portfolio" title="Rate this portfolio">
+    <span class="fb-mini-penguin" aria-hidden="true"></span>
+  </button>
+
+  <div class="feedback" id="feedback" role="dialog" aria-modal="true" aria-labelledby="fb-bubble-text" aria-hidden="true">
+    <div class="fb-backdrop" data-close></div>
+    <div class="fb-card">
+      <button class="fb-close" type="button" aria-label="Close" data-close>X</button>
+
+      <div class="fb-talk">
+        <div class="fb-penguin" aria-hidden="true"></div>
+        <p class="fb-bubble"><span class="fb-bubble-text" id="fb-bubble-text"></span></p>
+      </div>
+
+      <!-- Step 1: rating -->
+      <div class="fb-step" data-step="rate">
+        <div class="fb-scale" role="group" aria-label="Rating from 1 to 5">
+          <button type="button" class="fb-rate" data-rating="1">1</button>
+          <button type="button" class="fb-rate" data-rating="2">2</button>
+          <button type="button" class="fb-rate" data-rating="3">3</button>
+          <button type="button" class="fb-rate" data-rating="4">4</button>
+          <button type="button" class="fb-rate fb-rate-max" data-rating="5" aria-label="5: When can you start?!">When can you start?!</button>
+        </div>
+        <p class="fb-note">anonymous · one click</p>
+      </div>
+
+      <!-- Step 2: feedback (optional) -->
+      <div class="fb-step" data-step="write" hidden>
+        <label class="visually-hidden" for="fb-text">Your feedback (optional)</label>
+        <textarea id="fb-text" rows="4" maxlength="2000" placeholder="// optional: what did you like? what would you change?"></textarea>
+        <div class="fb-actions">
+          <button type="button" class="fb-skip">skip</button>
+          <button type="button" class="fb-send"><span class="method method-post">POST</span> /feedback</button>
+        </div>
+      </div>
+
+      <!-- Step 3: thank you -->
+      <div class="fb-step" data-step="thanks" hidden>
+        <p class="fb-note"><span class="status">201 Created</span> · response recorded</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== PILL TRANSITION: dark/white capsule that spins and zooms (js/pill.js) ===== -->
+  <div class="pill-stage" id="pill-stage" aria-hidden="true">
+    <div class="pill" id="pill">
+      <div class="pill-body" id="pill-body">
+        <span class="pill-half pill-dark"></span>
+        <span class="pill-half pill-light"></span>
+        <span class="pill-shine"></span>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/config.js"></script>
+  <script src="js/projects.js"></script>
+  <script src="js/dna.js"></script>
+  <script src="js/awesome.js"></script>
+  <script src="js/sidebar.js"></script>
+  <script src="js/penguin.js"></script>
+  <script src="js/tldr.js"></script>
+  <script src="js/tldr-hint.js"></script>
+  <script src="js/pill.js"></script>
+  <script src="js/analytics.js"></script>
+  <script src="js/feedback.js"></script>
+</body>
+</html>

@@ -1,0 +1,11 @@
+# Only the website goes to GitHub. Everything is ignored by default,
+# then the site's own files are let back in.
+/*
+!/.gitignore
+!/.nojekyll
+!/index.html
+!/css/
+!/js/
+!/projects/
+!/assets/
+.DS_Store
