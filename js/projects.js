@@ -50,7 +50,7 @@ window.PROJECTS = [
           "Nutrition Survey (ENNS 2018, 2019 and 2021) to see how what people ate on the recall day relates " +
           "to the risk factors that define MASLD (fatty liver disease). Eating more energy went with a larger " +
           "body size (BMI and waist-to-height ratio) in every sex and age group, most steeply in adults 60+. " +
-          "A higher share of energy from fat instead of carbohydrate went with higher “good” HDL cholesterol " +
+          "A higher share of energy from fat instead of carbohydrate went with slightly higher “good” HDL cholesterol " +
           "in every group. These patterns repeated across all three survey years and held after accounting " +
           "for smoking and physical activity."
   }
